@@ -1,0 +1,29 @@
+#!/usr/bin/env coffee
+
+path = require 'path'
+fs   = require 'fs'
+
+lib = path.join(path.dirname(fs.realpathSync(__filename)), '..', 'lib')
+
+Engine = require path.join(lib, 'tapchat-server', 'engine')
+
+# FIXME: Read from config file or something.
+SERVERS = [
+  {
+    id: 1
+    name: 'SWN'
+    server: 'irc.seattlewireless.net'
+    nick: 'ntest'
+    channels: [ '#testing' ]
+    autoConnect: true
+    autoRejoin: true
+    userName: 'ntest'
+    realName: 'ntest'
+  }
+]
+
+PORT = 80
+
+e = new Engine(PORT)
+e.addConnection server for server in SERVERS
+e.start()

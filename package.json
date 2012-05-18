@@ -1,0 +1,48 @@
+{
+  "name": "tapchat-server",
+  "version": "0.0.1-13",
+  "author": {
+    "name": "Eric Butler",
+    "email": "eric@codebutler.com"
+  },
+  "description": "The TapChat IRC bouncer",
+  "main": "",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/codebutler/tapchat-server.git"
+  },
+  "keywords": [
+    "tapchat",
+    "irc"
+  ],
+  "homepage": "http://tapchatapp.com/",
+  "scripts": {
+    "start": "coffee ./bin/tapchat-server"
+  },
+  "contributors": [],
+  "dependencies": {
+    "irc": "0.3.4",
+    "coffee-script": "*",
+    "ws": "*",
+    "underscore": "*"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=0.4"
+  },
+  "bugs": {
+    "url": "https://github.com/codebutler/tapchat-server/issues"
+  },
+  "licenses": [
+    {
+      "type": "GPLv3",
+      "url": "http://www.gnu.org/licenses/gpl-3.0.txt"
+    }
+  ],
+  "analyze": false,
+  "optionalDependencies": {},
+  "dist": {
+    "shasum": "bab66556115e298cc929fee6ce876b6d59db200f"
+  },
+  "subdomain": "cbtc"
+}
