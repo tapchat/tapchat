@@ -22,7 +22,7 @@ class Connection extends EventEmitter
     @server      = options.server
     @port        = options.port
     @secure      = !!options.is_ssl
-    @autoConnect = options.auto_connect
+    @autoConnect = !!options.auto_connect
     @nick        = options.nick
     @userName    = options.user_name
     @realName    = options.real_name

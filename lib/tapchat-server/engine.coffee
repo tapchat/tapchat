@@ -35,10 +35,9 @@ class Engine
       message = JSON.parse(message)
 
       callback = (reply) =>
-        if reply
-          @send client,
-            _reqid: message._reqid
-            msg:    reply
+        @send client,
+          _reqid: message._reqid
+          msg:    merge(reply, success: true)
 
       if handler = @messageHandlers[message._method]
         handler.apply(this, [ client, message, callback ]) 
@@ -173,11 +172,18 @@ class Engine
         cid:  conn.id
         type: 'open_buffer'
 
-    part:
+    part: (client, message, callback) ->
       conn = @findConnection(message.cid)
       conn.part(message.channel)
+      callback()
 
-    disconnect: (client, message) ->
+    disconnect: (client, message, callback) ->
       @findConnection(message.cid).disconnect()
+      callback()
+
+    'add-server': (client, message, callback) ->
+      @db.insertConnection message, (info) =>
+        @addConnection info
+        callback()
 
 module.exports = Engine

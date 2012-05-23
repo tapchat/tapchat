@@ -66,10 +66,17 @@ class BacklogDB
           throw err if err
           callback() if count == 0
 
-  selectConnections: (connectionCallback) ->
+  selectConnections: (callback) ->
     @db.all 'SELECT * FROM connections', (err, rows) ->
       throw err if err
-      connectionCallback(rows)
+      callback(rows)
+
+  selectConnection: (cid, callback) ->
+    @db.get 'SELECT * FROM connections WHERE cid = $cid',
+      $cid: cid,
+      (err, row) ->
+        throw err if err
+        callback(row)
 
   getBuffers: (cid, callback) ->
     @db.all 'SELECT * FROM buffers WHERE cid = $cid',
@@ -77,6 +84,24 @@ class BacklogDB
       (err, rows) ->
         throw err if err
         callback(rows)
+
+  insertConnection: (options, callback) ->
+    self = this
+    @db.run """
+      INSERT INTO connections (name, server, port, is_ssl, nick, user_name, real_name)
+      VALUES ($name, $server, $port, $is_ssl, $nick, $user_name, $real_name)
+      """,
+      $name:      options.hostname # FIXME
+      $server:    options.hostname
+      $port:      options.port
+      $nick:      options.nickname
+      $user_name: options.nickname # FIXME
+      $real_name: options.realname
+      $is_ssl:    options.ssl,
+      (err) ->
+        throw err if err
+        self.selectConnection @lastID, (row) ->
+          callback(row)
 
   insertBuffer: (cid, name, type, callback) ->
     @db.run 'INSERT INTO buffers (cid, name, type) VALUES ($cid, $name, $type)', 
@@ -118,7 +143,7 @@ class BacklogDB
     """
     @db.all query,
       $bid:   bid
-      $limit: 1000, # FIXME
+      $limit: 50, # FIXME
       (err, rows) ->
         throw err if err
         callback(rows)
