@@ -313,16 +313,17 @@ class Connection extends EventEmitter
       queue = new WorkingQueue(1)
 
       for name in [ nick ].concat(channels)
-        queue.perform do (name, bufferOver) =>
-          if buffer = @getBuffer(name)
-            buffer.removeMember(nick)
-            buffer.addEvent
-              type: 'quit'
-              nick: nick
-              msg:  reason, ->
-                bufferOver()
-          else
-            bufferOver()
+        do (name) =>
+          queue.perform (bufferOver) =>
+            if buffer = @getBuffer(name)
+              buffer.removeMember(nick)
+              buffer.addEvent
+                type: 'quit'
+                nick: nick
+                msg:  reason, ->
+                  bufferOver()
+            else
+              bufferOver()
 
       queue.whenDone -> over()
       queue.doneAddingJobs()
