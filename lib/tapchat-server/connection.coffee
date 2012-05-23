@@ -15,27 +15,21 @@ class Connection extends EventEmitter
   constructor: (engine, options, callback) ->
     @engine = engine
 
-    @queue = new WorkingQueue(1)
-
-    @id          = options.cid
-    @name        = options.name
-    @server      = options.server
-    @port        = options.port
-    @secure      = !!options.is_ssl
-    @autoConnect = !!options.auto_connect
-    @nick        = options.nick
-    @userName    = options.user_name
-    @realName    = options.real_name
-
     @buffers = []
 
-    @client = new Irc.Client @server, @nick,
-      server:      @server
-      port:        @port
-      secure:      @secure
-      nick:        @nick
-      userName:    @userName
-      realName:    @realName
+    @queue = new WorkingQueue(1)
+
+    @id   = options.cid
+    @name = options.name
+
+    @client = new Irc.Client options.server, options.nick,
+      name        = options.name
+      server      = options.server
+      port        = options.port
+      secure      = !!options.is_ssl
+      autoConnect = !!options.auto_connect
+      userName    = options.user_name
+      realName    = options.real_name
       autoConnect: false
       debug:       true
 
@@ -62,6 +56,13 @@ class Connection extends EventEmitter
 
   disconnect: ->
     @client.disconnect()
+
+  reconnect: ->
+    @disconnect()
+    @connect()
+
+  setNick: (nick) ->
+    @client.send("NICK #{nick}")
 
   say: (to, text) ->
     @client.say(to, text)
@@ -112,6 +113,29 @@ class Connection extends EventEmitter
 
     queue.doneAddingJobs()
 
+  edit: (options, callback) ->
+    @engine.db.updateConnection @id, options, (row) =>
+      @updateAttributes(row)
+      callback(row)
+
+  updateAttributes: (options) ->
+    serverChanged = (@getHostName() && (@getHostName() != options.server || @getPort() != options.port))
+    nickChanged   = (@getNick()     && (@getNick()     != options.nick))
+
+    @name = options.name
+
+    @client.opt.server      = options.server
+    @client.opt.port        = options.port
+    @client.opt.secure      = !!options.is_ssl
+    @client.opt.nick        = options.nick
+    @client.opt.userName    = options.user_name
+    @client.opt.realName    = options.real_name
+
+    if serverChanged
+      @reconnect()
+    else
+      @setNick(@client.opt.nick) if nickChanged
+
   addEventToAllBuffers: (event, callback) ->
     queue = new WorkingQueue(1)
     queue.whenDone -> callback()
@@ -122,8 +146,14 @@ class Connection extends EventEmitter
             over()
     queue.doneAddingJobs()
 
+  getName: ->
+    @name
+
+  getConfiguredNick: ->
+    @client.opt.nick
+
   getNick: ->
-    @client.nick || @nick
+    @client.nick
 
   getRealName: ->
     @client.opt.realName
@@ -142,7 +172,6 @@ class Connection extends EventEmitter
 
   getBuffer: (name) ->
     for buffer in @buffers
-      throw "WTF!! CID: #{@id} CNAME: #{@name} BID: #{buffer.id} BNAME: #{buffer.name} BCID: #{buffer.connection.id}" unless (buffer.connection.id == @id)
       return buffer if buffer.name == name
     return null
 
@@ -167,16 +196,16 @@ class Connection extends EventEmitter
         type:     'connecting'
         nick:     @getNick(),
         ssl:      @isSSL()
-        hostname: @server
-        port:     @port,
+        hostname: @getHostName()
+        port:     @getPort(),
         over
 
     connect: (over) ->
       @addEventToAllBuffers
         type:     'connected'
         ssl:      @isSSL()
-        hostname: @server
-        port:     @port,
+        hostname: @getHostName()
+        port:     @getPort(),
         over
 
     close: (over) ->
@@ -188,8 +217,8 @@ class Connection extends EventEmitter
     abort: (retryCount, over) ->
       @addEventToAllBuffers
         type:     'connecting_failed'
-        hostname: @sever
-        port:     @port,
+        hostname: @getHostName()
+        port:     @getPort(),
         over
 
     netError: (ex, over) ->
@@ -281,7 +310,7 @@ class Connection extends EventEmitter
         over
 
     quit: (nick, reason, channels, message, over) ->
-      queue = new WorkerQueue(1)
+      queue = new WorkingQueue(1)
 
       for name in [ nick ].concat(channels)
         queue.perform do (name, bufferOver) =>
@@ -380,26 +409,55 @@ class Connection extends EventEmitter
         over()
 
     nick: (oldnick, newnick, channels, message, over) ->
+      queue = new WorkingQueue(1)
+
+      # FIXME: @getBuffer(oldnick)?.setName(newnick)
+      
       for name in [ oldnick ].concat(channels)
         if buffer = @getBuffer(name)
-          # FIXME: buffer.setName(newnick)
-          buffer.addEvent
-            type: 'nickchange'
-            newnick: newnick
-            oldnick: oldnick,
-            over
-        else
-          over()
+          queue.perform (addEventOver) =>
+            buffer.addEvent
+              type: 'nickchange'
+              newnick: newnick
+              oldnick: oldnick,
+              addEventOver
+
+      queue.whenDone -> over()
+      queue.doneAddingJobs()
+
+    selfNick: (oldnick, newnick, channels, message, over) ->
+      queue = new WorkingQueue(1)
+
+      # FIXME: @getBuffer(oldnick)?.setName(newnick)
+      
+      queue.perform (addEventOver) =>
+        @consoleBuffer.addEvent
+          type: 'you_nickchange'
+          newnick: newnick
+          oldnick: oldnick,
+          addEventOver
+      
+      for name in [ oldnick ].concat(channels)
+        if buffer = @getBuffer(name)
+          queue.perform (addEventOver) =>
+            buffer.addEvent
+              type: 'you_nickchange'
+              newnick: newnick
+              oldnick: oldnick,
+              addEventOver
+
+      queue.whenDone -> over()
+      queue.doneAddingJobs()
 
     invite: (channel, from, message, over) ->
       @getConsoleBuffer.addEvent
         type:    'channel_invite'
         channel: channel
         from:    from,
-      over()
+        over()
 
     raw: (message, over) ->
-      console.log "RAW: #{@name} #{JSON.stringify(message)}"
+      console.log "RAW: #{@getName()} #{JSON.stringify(message)}"
       over()
 
     error: (error, over) ->

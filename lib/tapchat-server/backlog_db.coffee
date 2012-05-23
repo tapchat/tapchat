@@ -1,5 +1,6 @@
 Path    = require 'path'
 Fs      = require 'fs'
+Squel   = require 'squel'
 Sqlite3 = require('sqlite3').verbose()
 
 CoffeeScript = require 'coffee-script'
@@ -102,6 +103,27 @@ class BacklogDB
         throw err if err
         self.selectConnection @lastID, (row) ->
           callback(row)
+
+  updateConnection: (cid, options, callback) ->
+    self = this
+
+    sql = Squel.update().table('connections')
+
+    setAttribute = (name, value) =>
+      sql.set name, value if value
+
+    setAttribute 'name',      options.hostname # FIXME
+    setAttribute 'server',    options.hostname
+    setAttribute 'port',      options.port
+    setAttribute 'nick',      options.nickname
+    setAttribute 'user_name', options.nickname # FIXME
+    setAttribute 'real_name', options.realname
+    setAttribute 'is_ssl',    options.ssl
+
+    @db.run sql.toString(), (err) ->
+      throw err if err
+      self.selectConnection cid, (row) ->
+        callback(row)
 
   insertBuffer: (cid, name, type, callback) ->
     @db.run 'INSERT INTO buffers (cid, name, type) VALUES ($cid, $name, $type)', 

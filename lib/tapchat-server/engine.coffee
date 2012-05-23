@@ -186,4 +186,10 @@ class Engine
         @addConnection info
         callback()
 
+    'edit-server': (client, message, callback) ->
+      conn = @findConnection(message.cid)
+      conn.edit message, (attrs) =>
+        callback()
+        @send client, B.serverDetailsChanged(conn)
+
 module.exports = Engine

@@ -1,16 +1,21 @@
+CoffeeScript = require 'coffee-script'
+{starts, ends, compact, count, merge, extend, flatten, del, last} = CoffeeScript.helpers
 _ = require('underscore')
 
 module.exports =
   makeServer: (conn) ->
     type:         'makeserver'
     cid:          conn.id
-    name:         conn.name
-    nick:         conn.getNick()
+    name:         conn.getName()
+    nick:         conn.getConfiguredNick()
     realname:     conn.getRealName()
     hostname:     conn.getHostName()
     port:         conn.getPort()
     disconnected: conn.isDisconnected()
     ssl:          conn.isSSL()
+
+  serverDetailsChanged: (conn) ->
+    merge(@makeServer(conn), type: 'server_details_changed')
 
   makeBuffer: (buffer) ->
     msg =
