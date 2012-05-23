@@ -194,7 +194,7 @@ class Connection extends EventEmitter
     connecting: (over) ->
       @addEventToAllBuffers
         type:     'connecting'
-        nick:     @getNick(),
+        nick:     @getConfiguredNick(),
         ssl:      @isSSL()
         hostname: @getHostName()
         port:     @getPort(),
