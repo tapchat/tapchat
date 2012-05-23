@@ -1,5 +1,6 @@
 EventEmitter = require('events').EventEmitter
 Irc          = require 'irc'
+WorkingQueue = require('capisce').WorkingQueue
 util = require 'util'
 
 _ = require('underscore')
@@ -11,34 +12,56 @@ Buffer = require('./buffer')
 B = require('./message_builder')
 
 class Connection extends EventEmitter
-  buffers: [] # {}
-
-  constructor: (engine, options) ->
+  constructor: (engine, options, callback) ->
     @engine = engine
 
-    @id     = del options, 'id'
-    @name   = del options, 'name'
-    @server = del options, 'server'
+    @queue = new WorkingQueue(1)
 
-    nick = del options, 'nick'
+    @id          = options.cid
+    @name        = options.name
+    @server      = options.server
+    @port        = options.port
+    @secure      = !!options.is_ssl
+    @autoConnect = options.auto_connect
+    @nick        = options.nick
+    @userName    = options.user_name
+    @realName    = options.real_name
 
-    options.autoConnect = false
-    options.debug       = true
+    @buffers = []
 
-    @client = new Irc.Client @server, nick, options
+    @client = new Irc.Client @server, @nick,
+      server:      @server
+      port:        @port
+      secure:      @secure
+      nick:        @nick
+      userName:    @userName
+      realName:    @realName
+      autoConnect: false
+      debug:       true
 
-    # FIXME: Read backlog database... restore all buffers...
-
-    @addBuffer new Buffer(this, 0, '*')
-    
     for signalName, signalHandler of @signalHandlers
       do (signalName, signalHandler) =>
         @client.addListener signalName, (args...) =>
-          signalHandler.apply(this, arguments)
+          handler = =>
+            signalHandler.apply(this, arguments)
+          @queue.perform handler, arguments...
+
+    @engine.db.getBuffers @id, (buffers) =>
+      for bufferInfo in buffers
+        buffer = @addBuffer bufferInfo
+        @consoleBuffer = buffer if buffer.type == 'console'
+      unless @consoleBuffer
+        @createBuffer '*', 'console', (buffer) =>
+          @consoleBuffer = buffer
+          callback(this)
+      else
+        callback(this)
 
   connect: ->
-    console.log 'connect!'
     @client.connect()
+
+  disconnect: ->
+    @client.disconnect()
 
   say: (to, text) ->
     @client.say(to, text)
@@ -46,22 +69,61 @@ class Connection extends EventEmitter
   join: (chan) ->
     @client.join(chan)
 
-  addBuffer: (buffer) =>
+  part: (chan) ->
+    @client.part(chan)
+
+  addBuffer: (bufferInfo) =>
+    buffer = new Buffer(this, bufferInfo)
+    @buffers.push(buffer)
     buffer.on 'event', (event) =>
       @emit('event', event)
-    @buffers.push(buffer)
-    @emit 'event', B.makeBuffer(buffer)
+    buffer.addEvent B.makeBuffer(buffer)
+
     buffer
 
   removeBuffer: (buffer) ->
     @buffers.remove(buffer)
     @emit B.deleteBuffer(buffer)
 
-  addEventToAllBuffers: (event) ->
-    buffer.addEvent(event) for buffer in @buffers
+  sendBacklog: (client, callback) ->
+    queue = new WorkingQueue(1)
+
+    @engine.send client, B.makeServer(this)
+
+    for buffer in @buffers
+      do (buffer) =>
+        queue.perform (over) =>
+          buffer.addEvent B.makeBuffer(buffer), over
+
+        if buffer.type == 'channel' and buffer.isJoined
+          queue.perform (over) =>
+            buffer.addEvent B.channelInit(buffer), over
+
+        queue.perform (over) =>
+          buffer.getBacklog (events) =>
+            @engine.send client, event for event in events
+            over()
+
+    queue.whenDone =>
+      @engine.send client,
+        type: 'end_of_backlog'
+        cid:  @id
+      callback()
+
+    queue.doneAddingJobs()
+
+  addEventToAllBuffers: (event, callback) ->
+    queue = new WorkingQueue(1)
+    queue.whenDone -> callback()
+    for buffer in @buffers
+      do (buffer) =>
+        queue.perform (over) =>
+          buffer.addEvent event, =>
+            over()
+    queue.doneAddingJobs()
 
   getNick: ->
-    @client.nick
+    @client.nick || @nick
 
   getRealName: ->
     @client.opt.realName
@@ -73,192 +135,275 @@ class Connection extends EventEmitter
     @client.opt.port
 
   isDisconnected: ->
-    false # FIXME
+    !@client.connected
 
   isSSL: ->
     @client.opt.secure
 
-  getBuffer: (name, create = false) ->
+  getBuffer: (name) ->
     for buffer in @buffers
+      throw "WTF!! CID: #{@id} CNAME: #{@name} BID: #{buffer.id} BNAME: #{buffer.name} BCID: #{buffer.connection.id}" unless (buffer.connection.id == @id)
       return buffer if buffer.name == name
-
-    if create
-      id = @buffers.length + 1 # FIXME
-      return @addBuffer(new Buffer(this, id, name))
-
     return null
 
-  getConsoleBuffer: ->
-    for buffer in @buffers
-      return buffer if buffer.name == '*'
+  getOrCreateBuffer: (name, type, callback) ->
+    throw 'missing name' unless name
+    throw 'missing type' unless type
+
+    buffer = @getBuffer(name)
+    return callback(buffer, false) if buffer
+
+    @createBuffer(name, type, callback)
+
+  createBuffer: (name, type, callback) ->
+    self = this
+    @engine.db.insertBuffer @id, name, type, (bufferInfo) =>
+      buffer = self.addBuffer bufferInfo
+      callback(buffer, true)
 
   signalHandlers:
-    connecting: -> # FIXME: Doesn't exist
+    connecting: (over) ->
       @addEventToAllBuffers
         type:     'connecting'
-        hostname: @getHostName()
-        port:     @getPort()
+        nick:     @getNick(),
         ssl:      @isSSL()
-        nick:     @getNick()
+        hostname: @server
+        port:     @port,
+        over
 
-    # FIXME: irc.js doesn't emit events when reconnecting
+    connect: (over) ->
+      @addEventToAllBuffers
+        type:     'connected'
+        ssl:      @isSSL()
+        hostname: @server
+        port:     @port,
+        over
+
+    close: (over) ->
+      buffer.setJoined(false) for buffer in @buffers when buffer.type == 'channel'
+      @addEventToAllBuffers
+        type: 'socket_closed',
+        over
      
-    abort: (retryCount) -> # FIXME: Wrong event. needs to be for every failed attempt.
+    abort: (retryCount, over) ->
       @addEventToAllBuffers
-        type: 'connecting_failed'
+        type:     'connecting_failed'
         hostname: @sever
-        port: @port
+        port:     @port,
+        over
 
-    # FIXME: Pipe this through from the socket...
-    close: ->
+    netError: (ex, over) ->
+      over()
+
+    registered: (message, over) ->
       @addEventToAllBuffers
-        type: 'socket_closed'
+        type: 'connecting_finished',
+        over
 
-    # FIXME: Pipe this through from the socket...
-    connect: ->
-      @addEventToAllBuffers
-        type: 'connected'
-        ssl:  @isSSL()
+    motd: (motd, over) ->
+      @consoleBuffer.addEvent B.serverMotd(this, motd),
+        over
 
-    netError: (ex) ->
-
-    registered: (message) ->
-      @addEventToAllBuffers
-        type: 'connecting_finished'
-
-    motd: (motd) ->
-      @getConsoleBuffer().addEvent B.serverMotd(this, motd)
-
-    names: (channel, nicks) ->
-      buffer = @getBuffer(channel)
-      if buffer
+    names: (channel, nicks, over) ->
+      if buffer = @getBuffer(channel)
         buffer.setMembers(_.keys(nicks))
-        buffer.addEvent B.channelInit(buffer) # FIXME: Don't add this as an event.
+        buffer.addEvent B.channelInit(buffer), over
 
-    topic: (channel, topic, nick, message) ->
-      @getBuffer(channel)?.addEvent
-        type: 'channel_topic'
-        author: nick
-        topic: topic
-
-    join: (channel, nick, message) ->
-      shouldCreate = (nick == @getNick())
-      buffer = @getBuffer(channel, shouldCreate)
-
-      return unless buffer
-
-      buffer.addMember(nick)
-
-      if nick == @getNick()
+    topic: (channel, topic, nick, message, over) ->
+      if buffer = @getBuffer(channel)
         buffer.addEvent
-          type: 'you_joined_channel'
+          type: 'channel_topic'
+          author: nick
+          topic: topic,
+          over
       else
+        over()
+
+    join: (channel, nick, message, over) ->
+      return @signalHandlers.selfJoin.apply(this, [ channel, message, over ] ) if nick == @getNick()
+      
+      if buffer = @getBuffer(channel)
+        buffer.addMember(nick)
         buffer.addEvent
           type: 'joined_channel'
+          nick: nick,
+          over
+      else
+        over()
+
+    selfJoin: (channel, message, over) ->
+      @getOrCreateBuffer channel, Buffer::TYPE_CHANNEL, (buffer) =>
+        buffer.addMember(@getNick())
+        buffer.setJoined(true)
+        buffer.addEvent
+          type: 'you_joined_channel',
+          over
+
+    part: (channel, nick, reason, message, over) ->
+      return @signalHandlers.selfPart.apply(this, [ channel, reason, over ] ) if nick == @getNick()
+
+      if buffer = @getBuffer(channel)
+        buffer.removeMember(nick)
+        buffer.isJoined = false
+        buffer.addEvent
+          type: 'parted_channel'
+          nick: nick,
+          over
+      else
+        over()
+
+    selfPart: (channel, reason, over) ->
+      if buffer = @getBuffer(channel)
+        buffer.setJoined(false)
+        buffer.addEvent
+          type: 'you_parted_channel',
+          over
+      else
+        over()
+
+    kick: (channel, nick, byNick, reason, message, over) ->
+      if buffer = @getBuffer(channel)
+        buffer.removeMember(nick)
+        buffer.addEvent
+          type: 'kicked_channel'
           nick: nick
+          kicker: byNick
+          msg: reason,
+          over
+      else
+        over()
 
-    part: (channel, nick, reason, message) ->
-      buffer = @getBuffer(channel)
-      buffer?.removeMember(nick)
-      buffer?.addEvent
-        type: 'parted_channel'
-        nick: nick
-
-    kick: (channel, nick, byNick, reason, message) ->
-      buffer = @getBuffer(channel)
-      buffer?.removeMember(nick)
-      buffer?.addEvent
-        type: 'kicked_channel'
-        nick: nick
-        kicker: byNick
-        msg: reason
-
-    # FIXME: Does not exist!
-    self_quit: (reason, message) ->
+    selfQuit: (reason, over) ->
+      buffer.setJoined(false) for buffer in @buffers when buffer.type == 'channel'
       @addEventToAllBuffers
         type: 'quit_server'
-        msg:  reason
+        msg:  reason,
+        over
 
-    quit: (nick, reason, channels, message) ->
+    quit: (nick, reason, channels, message, over) ->
+      queue = new WorkerQueue(1)
+
       for name in [ nick ].concat(channels)
-        buffer = @getBuffer(name)
-        buffer?.removeMember(nick)
-        buffer?.addEvent
-          type: 'quit'
-          nick: nick
-          msg:  reason
+        queue.perform do (name, bufferOver) =>
+          if buffer = @getBuffer(name)
+            buffer.removeMember(nick)
+            buffer.addEvent
+              type: 'quit'
+              nick: nick
+              msg:  reason, ->
+                bufferOver()
+          else
+            bufferOver()
 
-    kill: (nick, reason, channels, message) ->
+      queue.whenDone -> over()
+      queue.doneAddingJobs()
+
+    kill: (nick, reason, channels, message, over) ->
       for name in [ nick ].concat(channels)
-        buffer = @getBuffer(name)
-        buffer?.removeMember(nick)
-        # FIXME add the event
+        if buffer = @getBuffer(name)
+          buffer.removeMember(nick)
+          buffer.addEvent
+            type:   'kill'
+            from:   nick,
+            reason: message, ->
+              over()
+        else
+          over()
 
-    selfMessage: (to, text) ->
+    selfMessage: (to, text, over) ->
       if to.match(/^[&#]/)
-        @getBuffer(to)?.addEvent
-          type: 'buffer_msg'
-          from: @getNick()
-          chan: to
-          msg: text
-          highlight: false # FIXME
-          self: false # FIXME
+        if buffer = @getBuffer(to)
+          buffer.addEvent
+            type:      'buffer_msg'
+            from:      @getNick()
+            chan:      to
+            msg:       text
+            highlight: false # FIXME
+            self:      true,
+            over
+        else
+          over()
       else
-        @getBuffer(to, true)?.addEvent
-          type:      'buffer_msg'
-          from:      @getNick()
-          msg:       text
-          highlight: false
-          self:      false
+        @getOrCreateBuffer to, Buffer::TYPE_QUERY, (buffer) =>
+          buffer.addEvent
+            type:      'buffer_msg'
+            from:      @getNick()
+            msg:       text
+            highlight: false
+            self:      true,
+            over
 
-    message: (nick, to, text, message) ->
+    message: (nick, to, text, message, over) ->
       if to.match(/^[&#]/)
-        @getBuffer(to)?.addEvent
-          type: 'buffer_msg'
-          from: nick
-          chan: to
-          msg: text
-          highlight: false # FIXME
-          self: false # FIXME
+        if buffer = @getBuffer(to)
+          buffer.addEvent
+            type:      'buffer_msg'
+            from:      nick
+            chan:      to
+            msg:       text
+            highlight: false # FIXME
+            self:      false,
+            over
+        else
+          over()
       else
-        @getBuffer(nick, true)?.addEvent
-          type:      'buffer_msg'
-          from:      nick
-          msg:       text
-          highlight: true
-          self:      false
+        @getOrCreateBuffer nick, Buffer::TYPE_QUERY, (buffer) =>
+          buffer.addEvent
+            type:      'buffer_msg'
+            from:      nick
+            msg:       text
+            highlight: true
+            self:      false,
+            over
 
-    action: (from, to, text) ->
+    action: (from, to, text, over) ->
       isChannel = to.match(/^[&#]/)
       bufferName = if isChannel then to else from
-      @getBuffer(bufferName)?.addEvent
-        type: 'buffer_me_msg'
-        from:  from
-        msg: text
+      buffer = @getBuffer(bufferName)
+      if buffer
+        buffer.addEvent
+          type: 'buffer_me_msg'
+          from: from
+          msg:  text,
+          over
+      else
+        over()
 
-    notice: (nick, to, text, message) ->
-      buffer = if (to == null) then @getConsoleBuffer() else @getBuffer(to)
-      buffer?.addEvent
-        type: 'notice'
-        msg:  text
+    notice: (nick, to, text, message, over) ->
+      buffer = if (!nick || !to) then @consoleBuffer else @getBuffer(to)
+      if buffer
+        buffer.addEvent
+          type: 'notice'
+          msg:  text,
+          over
+      else
+        over()
 
-    nick: (oldnick, newnick, channels, message) ->
-      for name in [ nick ].concat(channels)
-        @getBuffer(name)?.addEvent
-          type: 'nickchange'
-          newnick: newnick
-          oldnick: oldnick
+    nick: (oldnick, newnick, channels, message, over) ->
+      for name in [ oldnick ].concat(channels)
+        if buffer = @getBuffer(name)
+          # FIXME: buffer.setName(newnick)
+          buffer.addEvent
+            type: 'nickchange'
+            newnick: newnick
+            oldnick: oldnick,
+            over
+        else
+          over()
 
-    invite: (channel, from, message) ->
-      @getConsoleBuffer()?.emit
+    invite: (channel, from, message, over) ->
+      @getConsoleBuffer.addEvent
         type:    'channel_invite'
         channel: channel
-        from:    from
+        from:    from,
+      over()
 
-    raw: (message) ->
+    raw: (message, over) ->
       console.log "RAW: #{@name} #{JSON.stringify(message)}"
+      over()
 
-    error: (error) ->
-      console.log "ERR: #{JSON.stringify(error)}" # FIXME
+    error: (error, over) ->
+      console.log "ERR: #{JSON.stringify(error)}" # FIXME: Some sort of error handling...
+      over()
 
 module.exports = Connection

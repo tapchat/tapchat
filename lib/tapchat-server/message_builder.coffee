@@ -1,3 +1,5 @@
+_ = require('underscore')
+
 module.exports =
   makeServer: (conn) ->
     type:         'makeserver'
@@ -31,7 +33,7 @@ module.exports =
       topic_text:   buffer.topicText
       topic_time:   buffer.topicTime
       topic_author: buffer.topicBy
-    members: buffer.members.map (member) ->
+    members: _.values(buffer.members).map (member) ->
       nick:     member.nick
       realname: member.realName
       usermask: member.host
@@ -50,9 +52,12 @@ module.exports =
     hostmask: null # FIXME
 
   serverMotd: (conn, motd) ->
+    throw 'no conn' unless conn
+    throw 'no console buffer' unless conn.consoleBuffer
+
     type: 'server_motd'
     cid:  conn.id
-    bid:  conn.getConsoleBuffer().id
+    bid:  conn.consoleBuffer.id
     msg:  motd
 
   connectionDeleted: (conn) ->
