@@ -55,8 +55,11 @@ class Connection extends EventEmitter
   connect: ->
     @client.connect()
 
-  disconnect: ->
-    @client.disconnect()
+  disconnect: (message, cb) ->
+    unless @isDisconnected()
+      @client.disconnect(message, cb)
+    else
+      cb()
 
   reconnect: ->
     @disconnect()
@@ -117,6 +120,7 @@ class Connection extends EventEmitter
   edit: (options, callback) ->
     @engine.db.updateConnection @id, options, (row) =>
       @updateAttributes(row)
+      @engine.broadcast B.serverDetailsChanged(this)
       callback(row)
 
   updateAttributes: (options) ->

@@ -26,8 +26,6 @@ class Engine
         @addConnection connInfo for connInfo in conns
 
   addClient: (client) ->
-    console.log 'got client'
-
     @clients.push(client)
 
     client.on 'message', (message) =>
@@ -76,29 +74,47 @@ class Engine
 
       @connections.push conn
 
-      @broadcast B.makeServer(conn)
+      queue = new WorkingQueue(1)
+
+      queue.perform (over) =>
+        @broadcast B.makeServer(conn), over
+
       for buffer in conn.buffers
-        buffer.addEvent B.makeBuffer(buffer)
-        # No need to send backlog here. It's either a new connection
-        # or we're starting up and no clients have connected yet.
+        do (buffer) =>
+          queue.perform (over) =>
+            buffer.addEvent B.makeBuffer(buffer), over
+            # No need to send backlog here. It's either a new connection
+            # or we're starting up and no clients have connected yet.
 
-      conn.connect() if conn.autoConnect
+      queue.whenDone -> conn.connect() if conn.autoConnect
+      queue.doneAddingJobs()
 
-  removeConnection: (name) ->
-    throw 'Not Implemented' # FIXME
-    # conn = @findConnection(name)
-    # @engine.broadcast B.connectionDeleted(conn)
+  removeConnection: (conn, cb) ->
+    conn.disconnect =>
+      @connections.splice(@connections.indexOf(conn), 1)
+      @broadcast B.connectionDeleted(conn)
+      cb()
 
   findConnection: (cid) ->
     for conn in @connections
       return conn if conn.id == cid
     return null
 
-  broadcast: (message) ->
+  broadcast: (message, cb) ->
+    queue = new WorkingQueue(@clients.length)
+
+    console.log 'BROADCAST', JSON.stringify(message)
+
     message = @prepareMessage(message)
     json    = JSON.stringify(message)
+
     for client in @clients
-      client.send json
+      do (client) =>
+        queue.perform (over) =>
+          client.send json, over
+
+    queue.whenDone => cb() if cb
+    queue.doneAddingJobs()
 
     return message
 
@@ -107,7 +123,7 @@ class Engine
 
     for conn in @connections
       do (conn) =>
-        queue.perform (over) ->
+        queue.perform (over) =>
           conn.sendBacklog client, ->
             over()
 
@@ -190,8 +206,10 @@ class Engine
 
     'edit-server': (client, message, callback) ->
       conn = @findConnection(message.cid)
-      conn.edit message, (attrs) =>
-        callback()
-        @send client, B.serverDetailsChanged(conn)
+      conn.edit(message, callback)
+
+    'delete-connection': (client, message, callback) ->
+      conn = @findConnection(message.cid)
+      @removeConnection(conn, callback)
 
 module.exports = Engine
