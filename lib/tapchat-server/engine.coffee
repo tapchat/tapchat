@@ -179,6 +179,10 @@ class Engine
       @findConnection(message.cid).disconnect()
       callback()
 
+    reconnect: (client, message, callback) ->
+      @findConnection(message.cid).reconnect()
+      callback()
+
     'add-server': (client, message, callback) ->
       @db.insertConnection message, (info) =>
         @addConnection info
