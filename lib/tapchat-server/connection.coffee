@@ -166,7 +166,7 @@ class Connection extends EventEmitter
     @client.opt.port
 
   isDisconnected: ->
-    !@client.connected
+    (@client.conn == null || @client.conn.readyState == 'closed')
 
   isSSL: ->
     @client.opt.secure
