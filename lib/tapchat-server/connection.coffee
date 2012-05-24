@@ -22,14 +22,15 @@ class Connection extends EventEmitter
     @id   = options.cid
     @name = options.name
 
+    @autoConnect = !!options.auto_connect
+
     @client = new Irc.Client options.server, options.nick,
-      name        = options.name
-      server      = options.server
-      port        = options.port
-      secure      = !!options.is_ssl
-      autoConnect = !!options.auto_connect
-      userName    = options.user_name
-      realName    = options.real_name
+      name:        options.name
+      server:      options.server
+      port:        options.port
+      secure:      !!options.is_ssl
+      userName:    options.user_name
+      realName:    options.real_name
       autoConnect: false
       debug:       true
 

@@ -163,8 +163,6 @@ class Engine
       chan = message.channel
       conn = @findConnection(message.cid)
 
-      console.log 'found conn', message.cid, conn.name
-
       conn.join(chan)
 
       callback
