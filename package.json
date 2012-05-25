@@ -22,11 +22,12 @@
   "contributors": [],
   "dependencies": {
     "coffee-script": "1.3.3",
-    "ws": "0.4.14",
+    "faye-websocket": "0.4.2",
     "underscore": "1.3.3",
     "sqlite3": "2.1.1",
     "capisce": "0.4.3",
-    "squel": "1.0.3"
+    "squel": "1.0.3",
+    "express": "2.5.9"
   },
   "devDependencies": {},
   "engines": {

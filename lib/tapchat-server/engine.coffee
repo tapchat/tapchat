@@ -1,15 +1,16 @@
 WorkingQueue = require('capisce').WorkingQueue
+Http         = require('http')
+Express      = require('express')
+WebSocket    = require('faye-websocket')
+CoffeeScript = require('coffee-script')
+Util         = require('util')
 
-WebSocketServer = require('ws').Server
-CoffeeScript = require 'coffee-script'
+B          = require('./message_builder')
+Buffer     = require('./buffer')
+Connection = require('./connection')
+BacklogDB  = require('./backlog_db')
+
 {starts, ends, compact, count, merge, extend, flatten, del, last} = CoffeeScript.helpers
-
-Util = require 'util'
-
-B = require('./message_builder')
-Buffer = require('./buffer')
-Connection = require './connection'
-BacklogDB = require './backlog_db'
 
 class Engine
   constructor: (backlog_file, port) ->
@@ -17,20 +18,31 @@ class Engine
     @clients     = []
   
     @db = new BacklogDB backlog_file, =>
-      @server = new WebSocketServer
-        port: port
-      @server.on 'connection', (client) =>
-        @addClient(client)
+      @startServer(port)
 
       @db.selectConnections (conns) =>
         @addConnection connInfo for connInfo in conns
 
+  startServer: (port) ->
+    @app = Express.createServer()
+
+    @app.get '/', (req, res) =>
+      res.send('hello world')
+
+    @app.addListener 'upgrade', (request, socket, head) =>
+      ws = new WebSocket(request, socket, head)
+      console.log('open', ws.url, ws.version, ws.protocol)
+      @addClient(ws)
+
+    @app.listen(port)
+
   addClient: (client) ->
+    client.sendQueue = new WorkingQueue(1)
     @clients.push(client)
 
-    client.on 'message', (message) =>
-      console.log "Got message: #{message}"
-      message = JSON.parse(message)
+    client.onmessage = (event) =>
+      message = JSON.parse(event.data)
+      console.log "Got message: #{Util.inspect(message)}"
 
       callback = (reply) =>
         @send client,
@@ -42,8 +54,8 @@ class Engine
       else
         console.log "No handler for #{message._method}"
 
-    client.on 'close', (code, message) =>
-      console.log 'client disconnected', code, message
+    client.onclose = (event) =>
+      console.log 'client disconnected', event.code, event.reason
       index = @clients.indexOf(client)
       @clients.splice(index, 1)
 
@@ -52,7 +64,10 @@ class Engine
   send: (client, message, cb) ->
     message = @prepareMessage(message)
     console.log 'CLIENT SEND:', JSON.stringify(message)
-    client.send(JSON.stringify(message), cb)
+    client.sendQueue.perform (over) =>
+      client.send JSON.stringify(message),
+        cb() if cb
+        over()
     return message
 
   prepareMessage: (message) ->
@@ -83,15 +98,11 @@ class Engine
   broadcast: (message, cb) ->
     queue = new WorkingQueue(@clients.length)
 
-    console.log 'BROADCAST', JSON.stringify(message)
-
-    message = @prepareMessage(message)
-    json    = JSON.stringify(message)
 
     for client in @clients
       do (client) =>
         queue.perform (over) =>
-          client.send json, over
+          @send client, message, over
 
     queue.whenDone => cb() if cb
     queue.doneAddingJobs()
@@ -102,7 +113,7 @@ class Engine
     queue = new WorkingQueue(1)
 
     queue.perform (over) =>
-      client.send
+      @send client,
         type: 'header'
         idle_interval: 29000, # FIXME
         over
