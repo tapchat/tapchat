@@ -1,5 +1,5 @@
+Irc          = require('../irc/irc')
 EventEmitter = require('events').EventEmitter
-Irc          = require 'irc'
 WorkingQueue = require('capisce').WorkingQueue
 util = require 'util'
 
