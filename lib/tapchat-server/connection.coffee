@@ -51,14 +51,17 @@ class Connection extends EventEmitter
     @client.connect()
 
   disconnect: (message, cb) ->
+    cb = message if typeof(message) == 'function'
+
+    console.log 'disconnect(): ' + (if @client then @client.conn.readyState else 'no client')
     if @client && @client.conn.readyState != 'closed'
       @client.disconnect(message, cb)
     else
       cb()
 
   reconnect: ->
-    @disconnect()
-    @connect()
+    @disconnect =>
+      @connect()
 
   delete: (cb) ->
     @disconnect 'Connection was removed', =>
@@ -116,7 +119,7 @@ class Connection extends EventEmitter
       buffer.getBacklog (events) =>
         send(event) for event in events
 
-    unless client
+    if client
       # Not needed for a new connection (being broadcast to everyone)
       send
         type: 'end_of_backlog'
