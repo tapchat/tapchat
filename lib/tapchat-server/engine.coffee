@@ -156,12 +156,12 @@ class Engine
       callback()
 
     disconnect: (client, message, callback) ->
-      @findConnection(message.cid).disconnect()
-      callback()
+      @findConnection(message.cid).disconnect ->
+        callback()
 
     reconnect: (client, message, callback) ->
-      @findConnection(message.cid).reconnect()
-      callback()
+      @findConnection(message.cid).reconnect =>
+        callback()
 
     'add-server': (client, message, callback) ->
       @db.insertConnection message, (info) =>

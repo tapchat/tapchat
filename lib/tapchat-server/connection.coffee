@@ -50,21 +50,19 @@ class Connection extends EventEmitter
   connect: ->
     @client.connect()
 
-  disconnect: (message, cb) ->
-    cb = message if typeof(message) == 'function'
-
-    console.log 'disconnect(): ' + (if @client then @client.conn.readyState else 'no client')
+  disconnect: (cb) ->
     if @client && @client.conn.readyState != 'closed'
-      @client.disconnect(message, cb)
+      @client.disconnect(cb)
     else
       cb()
 
-  reconnect: ->
+  reconnect: (callback) ->
     @disconnect =>
       @connect()
+      callback()
 
   delete: (cb) ->
-    @disconnect 'Connection was removed', =>
+    @disconnect =>
       buffer.removeAllListeners() for buffer in @buffers
       @client.removeAllListeners()
       @client = null
