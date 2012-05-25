@@ -34,12 +34,7 @@ class Connection extends EventEmitter
       autoConnect: false
       debug:       true
 
-    for signalName, signalHandler of @signalHandlers
-      do (signalName, signalHandler) =>
-        @client.addListener signalName, (args...) =>
-          handler = =>
-            signalHandler.apply(this, arguments)
-          @queue.perform handler, arguments...
+    @addEventListeners()
 
     @engine.db.getBuffers @id, (buffers) =>
       for bufferInfo in buffers
@@ -56,7 +51,7 @@ class Connection extends EventEmitter
     @client.connect()
 
   disconnect: (message, cb) ->
-    unless @isDisconnected()
+    if @client && @client.conn.readyState != 'closed'
       @client.disconnect(message, cb)
     else
       cb()
@@ -64,6 +59,14 @@ class Connection extends EventEmitter
   reconnect: ->
     @disconnect()
     @connect()
+
+  delete: (cb) ->
+    @disconnect 'Connection was removed', =>
+      buffer.removeAllListeners() for buffer in @buffers
+      @client.removeAllListeners()
+      @client = null
+      @engine.db.deleteConnection @id, =>
+        cb()
 
   setNick: (nick) ->
     @client.send("NICK #{nick}")
@@ -82,45 +85,54 @@ class Connection extends EventEmitter
     @buffers.push(buffer)
     buffer.on 'event', (event) =>
       @emit('event', event)
-    buffer.addEvent B.makeBuffer(buffer)
+
+    @emit 'event', B.makeBuffer(buffer)
 
     buffer
 
   removeBuffer: (buffer) ->
+    buffer.removeAllListeners()
     @buffers.remove(buffer)
-    @emit B.deleteBuffer(buffer)
+    @emit 'event', B.deleteBuffer(buffer)
 
   sendBacklog: (client, callback) ->
     queue = new WorkingQueue(1)
 
-    @engine.send client, B.makeServer(this)
+    send = (message) =>
+      queue.perform (over) =>
+        if client
+          @engine.send(client, message, over)
+        else
+          @engine.broadcast(message, over)
+
+    send B.makeServer(this)
 
     for buffer in @buffers
-      do (buffer) =>
-        queue.perform (over) =>
-          buffer.addEvent B.makeBuffer(buffer), over
+      send B.makeBuffer(buffer)
 
-        if buffer.type == 'channel' and buffer.isJoined
-          queue.perform (over) =>
-            buffer.addEvent B.channelInit(buffer), over
+      if buffer.type == 'channel' and buffer.isJoined
+        send B.channelInit(buffer)
 
-        queue.perform (over) =>
-          buffer.getBacklog (events) =>
-            @engine.send client, event for event in events
-            over()
+      buffer.getBacklog (events) =>
+        send(event) for event in events
 
-    queue.whenDone =>
-      @engine.send client,
+    unless client
+      # Not needed for a new connection (being broadcast to everyone)
+      send
         type: 'end_of_backlog'
         cid:  @id
-      callback()
 
+    # FIXME: This is an awful hack. It should really be included in the 'make_server' message.
+    if @isConnecting()
+      send(merge(B.connecting(this), bid: buffer.id)) for buffer in @buffers
+
+    queue.whenDone => callback()
     queue.doneAddingJobs()
 
   edit: (options, callback) ->
     @engine.db.updateConnection @id, options, (row) =>
       @updateAttributes(row)
-      @engine.broadcast B.serverDetailsChanged(this)
+      @engine.broadcast(B.serverDetailsChanged(this))
       callback(row)
 
   updateAttributes: (options) ->
@@ -147,8 +159,7 @@ class Connection extends EventEmitter
     for buffer in @buffers
       do (buffer) =>
         queue.perform (over) =>
-          buffer.addEvent event, =>
-            over()
+          buffer.addEvent event, over
     queue.doneAddingJobs()
 
   getName: ->
@@ -170,7 +181,10 @@ class Connection extends EventEmitter
     @client.opt.port
 
   isDisconnected: ->
-    (@client.conn == null || @client.conn.readyState == 'closed')
+    (@client.conn == null || @client.conn.readyState != 'open')
+
+  isConnecting: ->
+    (@client.conn != null && @client.conn.readyState == 'opening')
 
   isSSL: ->
     @client.opt.secure
@@ -195,15 +209,17 @@ class Connection extends EventEmitter
       buffer = self.addBuffer bufferInfo
       callback(buffer, true)
 
+  addEventListeners: ->
+    for signalName, signalHandler of @signalHandlers
+      do (signalName, signalHandler) =>
+        @client.addListener signalName, (args...) =>
+          handler = =>
+            signalHandler.apply(this, arguments)
+          @queue.perform handler, arguments...
+
   signalHandlers:
     connecting: (over) ->
-      @addEventToAllBuffers
-        type:     'connecting'
-        nick:     @getConfiguredNick(),
-        ssl:      @isSSL()
-        hostname: @getHostName()
-        port:     @getPort(),
-        over
+      @addEventToAllBuffers B.connecting(this), over
 
     connect: (over) ->
       @addEventToAllBuffers
@@ -241,7 +257,8 @@ class Connection extends EventEmitter
     names: (channel, nicks, over) ->
       if buffer = @getBuffer(channel)
         buffer.setMembers(_.keys(nicks))
-        buffer.addEvent B.channelInit(buffer), over
+        @emit 'event', B.channelInit(buffer)
+        over()
 
     topic: (channel, topic, nick, message, over) ->
       if buffer = @getBuffer(channel)
@@ -340,8 +357,8 @@ class Connection extends EventEmitter
           buffer.addEvent
             type:   'kill'
             from:   nick,
-            reason: message, ->
-              over()
+            reason: message,
+            over
         else
           over()
 
@@ -460,7 +477,7 @@ class Connection extends EventEmitter
         type:    'channel_invite'
         channel: channel
         from:    from,
-        over()
+        over
 
     raw: (message, over) ->
       console.log "RAW: #{@getName()} #{JSON.stringify(message)}"

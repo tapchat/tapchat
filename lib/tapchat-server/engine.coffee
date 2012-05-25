@@ -47,50 +47,30 @@ class Engine
       index = @clients.indexOf(client)
       @clients.splice(index, 1)
 
-    @sendHeader(client)
     @sendBacklog(client)
 
-  send: (client, message) ->
+  send: (client, message, cb) ->
     message = @prepareMessage(message)
-    message.eid = -1 unless message.eid
     console.log 'CLIENT SEND:', JSON.stringify(message)
-    client.send JSON.stringify(message)
+    client.send(JSON.stringify(message), cb)
     return message
 
   prepareMessage: (message) ->
     message.time      = Date.now() unless message.time
     message.highlight = false      unless message.highlight
+    message.eid       = -1         unless message.eid
     return message
-
-  sendHeader: (client) ->
-    @send client,
-      type: 'header'
-      idle_interval: 29000 # FIXME
 
   addConnection: (options) ->
     new Connection this, options, (conn) =>
+      @connections.push conn
       conn.addListener 'event', (event) =>
         @broadcast event
-
-      @connections.push conn
-
-      queue = new WorkingQueue(1)
-
-      queue.perform (over) =>
-        @broadcast B.makeServer(conn), over
-
-      for buffer in conn.buffers
-        do (buffer) =>
-          queue.perform (over) =>
-            buffer.addEvent B.makeBuffer(buffer), over
-            # No need to send backlog here. It's either a new connection
-            # or we're starting up and no clients have connected yet.
-
-      queue.whenDone -> conn.connect() if conn.autoConnect
-      queue.doneAddingJobs()
+      conn.sendBacklog null, =>
+        conn.connect() if conn.autoConnect
 
   removeConnection: (conn, cb) ->
-    conn.disconnect =>
+    conn.delete =>
       @connections.splice(@connections.indexOf(conn), 1)
       @broadcast B.connectionDeleted(conn)
       cb()
@@ -121,38 +101,22 @@ class Engine
   sendBacklog: (client) ->
     queue = new WorkingQueue(1)
 
+    queue.perform (over) =>
+      client.send
+        type: 'header'
+        idle_interval: 29000, # FIXME
+        over
+
     for conn in @connections
       do (conn) =>
         queue.perform (over) =>
-          conn.sendBacklog client, ->
-            over()
+          conn.sendBacklog client, over
 
     queue.whenDone =>
       @send client,
         type: 'backlog_complete'
 
     queue.doneAddingJobs()
-
-  makeServer: (conn) ->
-    type:         'makeserver'
-    cid:          conn.id
-    name:         conn.name
-    nick:         conn.getNick()
-    realname:     conn.getRealName()
-    hostname:     conn.getHostName()
-    port:         conn.getPort()
-    disconnected: conn.isDisconnected()
-    ssl:          conn.isSSL()
-
-  makeBuffer: (buffer) ->
-    msg =
-      type:        'makebuffer'
-      buffer_type: buffer.type
-      cid:         buffer.connection.id
-      bid:         buffer.id
-      name:        buffer.name
-    msg.joined = buffer.isJoined if buffer.type == 'channel'
-    return msg
 
   messageHandlers:
     # FIXME 

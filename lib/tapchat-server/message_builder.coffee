@@ -17,7 +17,17 @@ module.exports =
   serverDetailsChanged: (conn) ->
     merge(@makeServer(conn), type: 'server_details_changed')
 
+  connecting: (conn) ->
+    cid:      conn.id
+    type:     'connecting'
+    nick:     conn.getConfiguredNick(),
+    ssl:      conn.isSSL()
+    hostname: conn.getHostName()
+    port:     conn.getPort(),
+
   makeBuffer: (buffer) ->
+    cid: buffer.connection.id
+    bid: buffer.id
     msg =
       type:        'makebuffer'
       buffer_type: buffer.type

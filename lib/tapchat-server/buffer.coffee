@@ -6,10 +6,6 @@ CoffeeScript = require 'coffee-script'
 B = require('./message_builder')
 _ = require('underscore')
 
-EXCLUDED_FROM_BACKLOG = [
-  'makeserver', 'makebuffer', 'connection_deleted', 'delete_buffer', 'channel_init'
-]
-
 class Buffer extends EventEmitter
   constructor: (connection, info) ->
     @connection = connection
@@ -34,20 +30,13 @@ class Buffer extends EventEmitter
       callback(rows)
 
   addEvent: (event, callback) ->
-    event = merge(event,
-      cid: @connection.id
-      bid: @id)
+    event.cid = @connection.id
+    event.bid = @id
 
-    if _.contains(EXCLUDED_FROM_BACKLOG, event.type)
-      event = merge(event, eid: -1)
+    @connection.engine.db.insertEvent event, (event) =>
+      # event will have an eid now
       @emit 'event', event
       callback(event) if callback
-
-    else
-      @connection.engine.db.insertEvent event, (event) =>
-        # event will have an eid now
-        @emit 'event', event
-        callback(event) if callback
 
   setMembers: (nicks) ->
     @members = {}

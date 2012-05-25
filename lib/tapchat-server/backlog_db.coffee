@@ -125,6 +125,12 @@ class BacklogDB
       self.selectConnection cid, (row) ->
         callback(row)
 
+  deleteConnection: (cid, callback) ->
+    @db.run "DELETE FROM connections WHERE cid = $cid", $cid: cid, (err) ->
+      throw err if err
+      throw "Didn't find connection" unless @changes
+      callback()
+
   insertBuffer: (cid, name, type, callback) ->
     @db.run 'INSERT INTO buffers (cid, name, type) VALUES ($cid, $name, $type)', 
       $cid:  cid
