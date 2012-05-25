@@ -1,6 +1,6 @@
 {
   "name": "tapchat-server",
-  "version": "0.0.1-34",
+  "version": "0.0.1-35",
   "author": {
     "name": "Eric Butler",
     "email": "eric@codebutler.com"
@@ -27,7 +27,8 @@
     "sqlite3": "2.1.1",
     "capisce": "0.4.3",
     "squel": "1.0.3",
-    "express": "2.5.9"
+    "express": "2.5.9",
+    "password-hash": "1.2.0"
   },
   "devDependencies": {},
   "engines": {

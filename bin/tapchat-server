@@ -7,7 +7,7 @@ lib = path.join(path.dirname(fs.realpathSync(__filename)), '..', 'lib')
 
 Engine = require path.join(lib, 'tapchat-server', 'engine')
 
-PORT         = 8080
+# FIXME: Pick a better default here
 BACKLOG_FILE = '/tmp/backlog.db'
 
-@engine = new Engine BACKLOG_FILE, PORT
+@engine = new Engine BACKLOG_FILE

@@ -1,7 +1,9 @@
 WorkingQueue = require('capisce').WorkingQueue
 Http         = require('http')
 Express      = require('express')
+Url          = require('url')
 WebSocket    = require('faye-websocket')
+PasswordHash = require('password-hash')
 CoffeeScript = require('coffee-script')
 Util         = require('util')
 
@@ -13,12 +15,21 @@ BacklogDB  = require('./backlog_db')
 {starts, ends, compact, count, merge, extend, flatten, del, last} = CoffeeScript.helpers
 
 class Engine
-  constructor: (backlog_file, port) ->
+  constructor: (backlog_file) ->
+    console.log '--------------------------'
+    console.log 'engine start!'
+    console.log '--------------------------'
+
     @connections = []
     @clients     = []
+
+    @password = process.env['TAPCHAT_PASS']
+    @port     = process.env['TAPCHAT_PORT'] || 6000
+
+    throw 'No password set!' unless PasswordHash.isHashed(@password)
   
     @db = new BacklogDB backlog_file, =>
-      @startServer(port)
+      @startServer(@port)
 
       @db.selectConnections (conns) =>
         @addConnection connInfo for connInfo in conns
@@ -27,14 +38,23 @@ class Engine
     @app = Express.createServer()
 
     @app.get '/', (req, res) =>
-      res.send('hello world')
+      res.send('hello world ' + Util.inspect(process.env))
 
     @app.addListener 'upgrade', (request, socket, head) =>
+      query = Url.parse(request.url, true).query
+      unless PasswordHash.verify(query.password, @password)
+        # FIXME: Return proper HTTP error
+        console.log 'bad password'
+        request.socket.end('foo')
+        return
+
       ws = new WebSocket(request, socket, head)
-      console.log('open', ws.url, ws.version, ws.protocol)
+      console.log 'websocket client: connected'
       @addClient(ws)
 
     @app.listen(port)
+
+    console.log "Listening on port #{port}"
 
   addClient: (client) ->
     client.sendQueue = new WorkingQueue(1)
@@ -55,7 +75,7 @@ class Engine
         console.log "No handler for #{message._method}"
 
     client.onclose = (event) =>
-      console.log 'client disconnected', event.code, event.reason
+      console.log 'websocket client: disconnected', event.code, event.reason
       index = @clients.indexOf(client)
       @clients.splice(index, 1)
 
