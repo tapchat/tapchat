@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>TapChat</title>
+    <link rel="stylesheet" href="css/tapchat.css" type="text/css" />
+    <script type="text/javascript" src="js/lib/jquery-1.7.1.js"></script>
+    <script type="text/javascript" src="js/lib/underscore.js"></script>
+    <script type="text/javascript" src="js/lib/backbone.js"></script>
+    <script type="text/javascript" src="js/lib/ICanHaz.js"></script>
+    <script type="text/javascript" src="js/lib/jquery-linkify.js"></script>
+    
+    <script type="text/javascript" src="js/util.js"></script>
+    <script type="text/javascript" src="js/models.js"></script>
+    <script type="text/javascript" src="js/collections.js"></script>
+    <script type="text/javascript" src="js/views.js"></script>
+    <script type="text/javascript" src="js/routers.js"></script>
+    <script type="text/javascript" src="js/main.js"></script>
+        
+    <script type="text/html" id="NetworkListRowView">
+      <div class="networkInfo"></div>
+      <ul class="bufferList"></ul>
+    </script>    
+    
+    <script type="text/html" id="NetworkListRowInfoView">
+      <a href="{{url}}" title="{{title}}">{{name}}</a>
+    </script>
+
+    <script type="text/html" id="BufferListRowView">
+      <a href="{{url}}">{{name}}</a>
+    </script>
+    
+    <script type="text/html" id="UsersListView">
+      <ul class="userList {{class}}"></ul>
+    </script>
+    
+    <script type="text/html" id="UserListRowView">
+      <a href="{{url}}" title="{{title}}">{{nick}}</a>
+    </script>
+    
+    <script type="text/html" id="MemberListRowView">
+      <a href="{{url}}" title="{{nick}}">{{nick}}</a>
+    </script>
+    
+    <script type="text/html" id="buffer_msg">
+      <p class="message">
+        <span class="info">
+          <span class="sender">{{from}}</span>
+          <span class="time">
+            {{datetime.hours}}:{{datetime.minutes}}:{{datetime.seconds}}
+          </span>
+        </span>
+        <span class="body"><a title="{{raw}}">{{msg}}</a></span>
+      </p>
+    </script>
+
+    <script type="text/html" id="buffer_me_msg">
+      <p class="message">
+        <span class="info">
+          <span class="sender">*</span>
+          <span class="time">
+            {{datetime.hours}}:{{datetime.minutes}}:{{datetime.seconds}}
+          </span>
+        </span>
+        <span class="body"><a title="{{raw}}">{{from}} {{msg}}</a></span>
+      </p>
+    </script>
+    
+    <script type="text/html" id="joined_channel">
+      <p class="message">
+        <span class="info">
+          <span class="time">
+            {{datetime.hours}}:{{datetime.minutes}}:{{datetime.seconds}}
+          </span>
+        </span>
+        <span class="body"><a title="{{raw}}">{{nick}} has joined.</a></span>
+      </p>
+    </script>
+    
+    <script type="text/html" id="parted_channel">
+      <p class="message">
+        <span class="info">
+          <span class="time">
+            {{datetime.hours}}:{{datetime.minutes}}:{{datetime.seconds}}
+          </span>
+        </span>
+        <span class="body"><a title="{{raw}}">{{nick}} has parted.</a></span>
+      </p>
+    </script>
+    
+    <script type="text/html" id="quit">
+      <p class="message">
+        <span class="info">
+          <span class="time">
+            {{datetime.hours}}:{{datetime.minutes}}:{{datetime.seconds}}
+          </span>
+        </span>
+        <span class="body"><a title="{{raw}}">{{nick}} has quit.</a></span>
+      </p>
+    </script>    
+  </head>
+  <body>
+    <div id="app">
+      <div id="main">
+        <div id="topic">
+          
+        </div>
+        <div id="buffers">
+          
+        </div>
+        <div id="entry">
+          <input type="text" />
+        </div>
+      </div>
+      <div id="sidebar">
+        <ul id="networks">
+        </ul>
+        <div id="users">
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -24,7 +24,7 @@ class Engine
     @clients     = []
 
     @password = process.env['TAPCHAT_PASS']
-    @port     = process.env['TAPCHAT_PORT'] || 6000
+    @port     = process.env['TAPCHAT_PORT'] || 3337
 
     throw 'No password set!' unless PasswordHash.isHashed(@password)
   
@@ -37,8 +37,7 @@ class Engine
   startServer: (port) ->
     @app = Express.createServer()
 
-    @app.get '/', (req, res) =>
-      res.send('hello world ' + Util.inspect(process.env))
+    @app.use(Express.static(__dirname + '/../../web'));
 
     @app.addListener 'upgrade', (request, socket, head) =>
       query = Url.parse(request.url, true).query

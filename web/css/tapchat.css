@@ -1,0 +1,183 @@
+body {
+  padding: 0px;
+  margin: 0px;
+  overflow: hidden;
+}
+
+#app {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+
+#main {
+  position: absolute;
+  left: 0px;
+  right: 160px;
+  height: 100%;
+  background: #777;
+}
+
+#topic {
+  height: 30px;
+  background: #EEE;
+  border-bottom: 1px solid #BBB;
+}
+
+#buffers {
+  position: absolute;
+  top: 31px;
+  bottom: 1.5em;
+  width: 100%;
+  background: #fff;
+  overflow-y: scroll;
+}
+
+#buffers div {
+  display: none;
+}
+
+#buffers div.active {
+  display: block;
+}
+
+#entry {
+  background: #fff;
+  border-top: 1px solid #bbb;
+  position: absolute;
+  bottom: 0px;
+  height: 1.5em;
+  width: 100%;
+}
+
+#entry input {
+  border: 0;
+  outline: 0;
+  position: absolute;
+  left: 0px;
+  right: 0px;
+  height: 100%;
+  padding: 0 0.5em;
+}
+
+#sidebar {
+  position: absolute;
+  right: 0px;
+  width: 160px;
+  height: 100%;
+  border-left: 1px solid #BBB;
+  background: white;
+}
+
+#networks {
+  height: 50%;
+}
+
+#networks, #users, #users ul {
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+}
+
+#networks li, #users ul li {
+  list-style: none;
+  font-family: sans-serif;
+  font-size: 13px;
+}
+
+#networks li .networkInfo {
+  border-bottom: 1px solid #ccc;
+  background: #EEE;
+}
+
+#networks li.active .networkInfo {
+  background: #e1e1e1;
+}
+
+#networks li a, #users ul li a {
+  padding: 6px;
+  color: inherit;
+  font-weight: bold;
+  text-decoration: none;
+  display: block;
+}
+
+#networks li a:hover, #users ul li:hover {
+  background: #f8f8f8;
+}
+
+#networks li ul.bufferList {
+  padding: 0;
+}
+
+#networks li ul.bufferList li {
+  border-bottom: 0;
+}
+
+#networks li ul.bufferList li a {
+  font-weight: normal;
+}
+
+#networks li ul.bufferList li.active {
+  background: #f1f1f1;
+}
+
+#networks li ul.bufferList li.archived {
+  display: none;
+}
+
+#users {
+  top: 50%;
+  height: 50%;
+  border-top: 1px solid #BBB;
+  margin: 0;
+}
+
+#users ul {
+  display: none;
+}
+
+#users ul.active {
+  display: block !important;
+}
+
+#users ul li a {
+  font-weight: normal;
+  padding-left: 18px;
+}
+
+#users ul li.op a {
+  background: url('../images/op.png') left center no-repeat;
+}
+
+#networks, #users {
+  moz-user-select: none;
+  -webkit-user-select: none;
+}
+
+.message {
+  margin: 2px;
+  padding: 2px;
+}
+
+.message .info {
+  width: 5em;
+  display: inline-block;
+  text-align: right;
+  padding: 2px;
+  border-radius: 5px;
+  background-color: #eef;
+  font-size: 80%;
+  overflow: hidden;
+}
+
+.message .info .time {
+  font-family: Andale Mono, monospace;
+  font-size: 60%;
+}
+
+.message .body {
+  padding: 2px;
+  background-color: #eee;
+}
