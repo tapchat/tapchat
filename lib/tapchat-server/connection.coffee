@@ -108,27 +108,33 @@ class Connection extends EventEmitter
 
     send B.makeServer(this)
 
+    bufferQueue = new WorkingQueue(1)
     for buffer in @buffers
-      send B.makeBuffer(buffer)
+      bufferQueue.perform (bufferOver) ->
+        send B.makeBuffer(buffer)
 
-      if buffer.type == 'channel' and buffer.isJoined
-        send B.channelInit(buffer)
+        if buffer.type == 'channel' and buffer.isJoined
+          send B.channelInit(buffer)
 
-      buffer.getBacklog (events) =>
-        send(event) for event in events
+        buffer.getBacklog (events) =>
+          send(event) for event in events
+          bufferOver()
 
-    if client
-      # Not needed for a new connection (being broadcast to everyone)
-      send
-        type: 'end_of_backlog'
-        cid:  @id
+    bufferQueue.whenDone =>
+      if client
+        # Not needed for a new connection (being broadcast to everyone)
+        send
+          type: 'end_of_backlog'
+          cid:  @id
 
-    # FIXME: This is an awful hack. It should really be included in the 'make_server' message.
-    if @isConnecting()
-      send(merge(B.connecting(this), bid: buffer.id)) for buffer in @buffers
+      # FIXME: This is an awful hack. It should really be included in the 'make_server' message.
+      if @isConnecting()
+        send(merge(B.connecting(this), bid: buffer.id)) for buffer in @buffers
+      queue.doneAddingJobs()
+
+    bufferQueue.doneAddingJobs()
 
     queue.whenDone => callback()
-    queue.doneAddingJobs()
 
   edit: (options, callback) ->
     @engine.db.updateConnection @id, options, (row) =>
