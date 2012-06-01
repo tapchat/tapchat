@@ -110,15 +110,16 @@ class Connection extends EventEmitter
 
     bufferQueue = new WorkingQueue(1)
     for buffer in @buffers
-      bufferQueue.perform (bufferOver) ->
-        send B.makeBuffer(buffer)
+      do (buffer) =>
+        bufferQueue.perform (bufferOver) =>
+          send B.makeBuffer(buffer)
 
-        if buffer.type == 'channel' and buffer.isJoined
-          send B.channelInit(buffer)
+          if buffer.type == 'channel' and buffer.isJoined
+            send B.channelInit(buffer)
 
-        buffer.getBacklog (events) =>
-          send(event) for event in events
-          bufferOver()
+          buffer.getBacklog (events) =>
+            send(event) for event in events
+            bufferOver()
 
     bufferQueue.whenDone =>
       if client
