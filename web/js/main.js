@@ -1,3 +1,7 @@
+_.templateSettings = {
+  interpolate : /\{\{(.+?)\}\}/g
+};
+
 function App () {
   this.controller = new Router();
   this.networkList = new NetworkList();

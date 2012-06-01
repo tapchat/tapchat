@@ -1,30 +1,30 @@
 var BUFFER_EVENTS = {
-  "event_socked_closed":         "Disconnected",
-  "event_connecting":            "Connecting",
-  "event_quit_server":           "Quit server",
-  "event_notice":                "{{msg}}",
-  "event_you_nickchange":        "You are now known as {{newnick}}",
-  "event_banned":                "You were banned",
-  "event_connecting_retry":      "Retrying connection in {{interval}} seconds",
-  "event_connecting_failed":     "Failed to connect",
-  "event_connected":             "Connected to {{hostname}}",
-  "event_joining":               "Joining {{channels}}",
-  "event_user_mode":             "Your mode is +{{newmode}}",
-  "event_joined_channel":        "{{nick}} has joined",
-  "event_parted_channel":        "{{nick}} has left",
-  "event_quit":                  "{{nick}} has quit",
-  "event_away":                  "{{nick}} is away",
-  "event_kicked_channel":        "{{nick}} was kicked from {{chan}} by {{kicker}}: {{msg}}",
-  "event_you_joined_channel":    "You have joined",
-  "event_you_parted_channel":    "You have left",
-  "event_channel_mode_is":       "Mode is: {{newmode}}",
-  "event_channel_timestamp":     "Created at: {{timestamp}}",
-  "event_nickchange":            "{{oldnick}} is now known as {{newnick}}",
-  "event_user_channel_mode":     "Mode {{diff}} {{nick}} by {{from}}",
-  "event_channel_url":           "Channel URL: {{url}}",
-  "event_channel_topic":         "{{nick}} set the topic: {{topic}}",
-  "event_channel_topic_cleared": "{{nick}} cleared the topic",
-  "event_channel_mode":          "Channel mode: {{diff}} by {{from}}"
+  "socked_closed":         "Disconnected",
+  "connecting":            "Connecting",
+  "quit_server":           "Quit server",
+  "notice":                "{{msg}}",
+  "you_nickchange":        "You are now known as {{newnick}}",
+  "banned":                "You were banned",
+  "connecting_retry":      "Retrying connection in {{interval}} seconds",
+  "connecting_failed":     "Failed to connect",
+  "connected":             "Connected to {{hostname}}",
+  "joining":               "Joining {{channels}}",
+  "user_mode":             "Your mode is +{{newmode}}",
+  "joined_channel":        "{{nick}} has joined",
+  "parted_channel":        "{{nick}} has left",
+  "quit":                  "{{nick}} has quit",
+  "away":                  "{{nick}} is away",
+  "kicked_channel":        "{{nick}} was kicked from {{chan}} by {{kicker}}: {{msg}}",
+  "you_joined_channel":    "You have joined",
+  "you_parted_channel":    "You have left",
+  "channel_mode_is":       "Mode is: {{newmode}}",
+  "channel_timestamp":     "Created at: {{timestamp}}",
+  "nickchange":            "{{oldnick}} is now known as {{newnick}}",
+  "user_channel_mode":     "Mode {{diff}} {{nick}} by {{from}}",
+  "channel_url":           "Channel URL: {{url}}",
+  "channel_topic":         "{{nick}} set the topic: {{topic}}",
+  "channel_topic_cleared": "{{nick}} cleared the topic",
+  "channel_mode":          "Channel mode: {{diff}} by {{from}}"
 };
 
 var AppView = Backbone.View.extend({
@@ -203,7 +203,7 @@ var BufferView = Backbone.View.extend({
 
     var template = BUFFER_EVENTS[event.type];
     if (template) {
-      text = _.template(templateString, event);
+      text = _.template(template, event);
     } else if (event.msg) {
       text = event.msg;
     }
