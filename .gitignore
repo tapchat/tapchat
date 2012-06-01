@@ -5,3 +5,5 @@
 *.dylib
 *.o
 *.lock-wscript
+
+node_modules/
