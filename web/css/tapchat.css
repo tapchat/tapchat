@@ -61,6 +61,13 @@ body {
 }
 
 #entry input {
+  display: block;
+  width: auto;
+  border: initial;
+  -webkit-box-shadow: none;
+     -moz-box-shadow: none;
+          box-shadow: none;
+
   border: 0;
   outline: 0;
   position: absolute;
