@@ -56,7 +56,7 @@ class BacklogDB
       """
       """
       CREATE INDEX IF NOT EXISTS events_bid ON events (bid);
-      """   
+      """
     ]
 
     @db.serialize =>
@@ -132,13 +132,15 @@ class BacklogDB
       callback()
 
   insertBuffer: (cid, name, type, callback) ->
-    @db.run 'INSERT INTO buffers (cid, name, type) VALUES ($cid, $name, $type)', 
-      $cid:  cid
-      $name: name
-      $type: type,
+    autoJoin = (type == 'channel')
+    @db.run 'INSERT INTO buffers (cid, name, type, auto_join) VALUES ($cid, $name, $type, $auto_join)',
+      $cid:       cid
+      $name:      name
+      $type:      type
+      $auto_join: autoJoin,
       (err) ->
         throw err if err
-        callback 
+        callback
           cid:  cid
           bid:  @lastID
           name: name
@@ -146,7 +148,7 @@ class BacklogDB
 
   insertEvent: (event, callback) ->
     query = """
-      INSERT INTO events (bid, data) 
+      INSERT INTO events (bid, data)
       VALUES ($bid, $data)
     """
     @db.run query,

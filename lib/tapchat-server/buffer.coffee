@@ -12,6 +12,7 @@ class Buffer extends EventEmitter
     @id         = info.bid
     @name       = info.name
     @type       = info.type
+    @autoJoin   = info.auto_join
 
     @members = {}
 
@@ -56,7 +57,6 @@ class Buffer extends EventEmitter
     delete @members[nick]
 
   setJoined: (joined) ->
-    console.log 'set joined', @name, joined
     @isJoined = joined
     @members = {} unless joined
 

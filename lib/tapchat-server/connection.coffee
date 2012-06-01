@@ -235,7 +235,7 @@ class Connection extends EventEmitter
       @addEventToAllBuffers
         type: 'socket_closed',
         over
-     
+
     abort: (retryCount, over) ->
       @addEventToAllBuffers
         type:     'connecting_failed'
@@ -250,6 +250,9 @@ class Connection extends EventEmitter
       @addEventToAllBuffers
         type: 'connecting_finished',
         over
+
+      for buffer in @buffers
+        @client.join(buffer.name) if buffer.type == 'channel' && buffer.autoJoin
 
     motd: (motd, over) ->
       @consoleBuffer.addEvent B.serverMotd(this, motd),
@@ -273,7 +276,7 @@ class Connection extends EventEmitter
 
     join: (channel, nick, message, over) ->
       return @signalHandlers.selfJoin.apply(this, [ channel, message, over ] ) if nick == @getNick()
-      
+
       if buffer = @getBuffer(channel)
         buffer.addMember(nick)
         buffer.addEvent
@@ -436,7 +439,7 @@ class Connection extends EventEmitter
       queue = new WorkingQueue(1)
 
       # FIXME: @getBuffer(oldnick)?.setName(newnick)
-      
+
       for name in [ oldnick ].concat(channels)
         if buffer = @getBuffer(name)
           queue.perform (addEventOver) =>

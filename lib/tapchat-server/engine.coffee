@@ -27,7 +27,7 @@ class Engine
     @port     = process.env['TAPCHAT_PORT'] || 3337
 
     throw 'No password set!' unless PasswordHash.isHashed(@password)
-  
+
     @db = new BacklogDB backlog_file, =>
       @startServer(@port)
 
