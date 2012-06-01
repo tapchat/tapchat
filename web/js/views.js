@@ -221,6 +221,9 @@ var BufferView = Backbone.View.extend({
         }
       })
       $(this.el).append(rendered);
+
+      // FIXME: This should only scroll the active buffer.
+      $('#buffers').scrollTop(this.el.scrollHeight);
     }
   }
 });
