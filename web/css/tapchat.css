@@ -2,6 +2,7 @@ body {
   padding: 0px;
   margin: 0px;
   overflow: hidden;
+  font-family: sans-serif;
 }
 
 #app {
@@ -25,20 +26,28 @@ body {
   border-bottom: 1px solid #BBB;
 }
 
+#topic #topic_text {
+  padding-top: 6px;
+  padding-left: 6px;
+  font-size: 14px;
+}
+
 #buffers {
   position: absolute;
   top: 31px;
   bottom: 1.5em;
   width: 100%;
-  background: #fff;
+  background-color: #f8f8fa;
+  font-size: 9pt;
+  color: #555;
   overflow-y: scroll;
 }
 
-#buffers div {
+#buffers div.buffer {
   display: none;
 }
 
-#buffers div.active {
+#buffers div.buffer.active {
   display: block;
 }
 
@@ -156,6 +165,47 @@ body {
   -webkit-user-select: none;
 }
 
+.buffer .event {
+  padding: 2px;
+  padding-bottom: 4px;
+  margin-bottom: 0px;
+  overflow: auto;
+}
+
+.buffer .event:nth-child(even) {
+  background-color: #e8e8f1;
+}
+
+.buffer .event span {
+  display: table-cell;
+}
+.buffer .event span.who {
+  font-weight: bold;
+  width: 110px;
+  text-align: right;
+  padding-right: 8px;
+}
+/*
+#messages>span>span.message,#message-input {
+  */
+.buffer .event span.message {
+  font-size: 11pt;
+  font-family: sans-serif;
+  color: #111;
+}
+.buffer .event span.header {
+  padding-left: 118px;
+  display: block;
+}
+.buffer .event span.channel {
+  display: none;
+}
+.buffer .event span.when {
+  display: none;
+}
+
+
+/*
 .message {
   margin: 2px;
   padding: 2px;
@@ -181,3 +231,4 @@ body {
   padding: 2px;
   background-color: #eee;
 }
+*/

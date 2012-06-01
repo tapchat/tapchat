@@ -40,9 +40,9 @@ var Router = Backbone.Router.extend({
     
         var topic = buffer.get('topic_text');
         if (topic)
-          $('#topic').html(topic);
+          $('#topic #topic_text').html(topic);
         else
-          $('#topic').html('');
+          $('#topic #topic_text').html('');
 
         this.current_network = network;
         this.current_buffer  = buffer;

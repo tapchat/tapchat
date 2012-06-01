@@ -1,3 +1,32 @@
+var BUFFER_EVENTS = {
+  "event_socked_closed":         "Disconnected",
+  "event_connecting":            "Connecting",
+  "event_quit_server":           "Quit server",
+  "event_notice":                "{{msg}}",
+  "event_you_nickchange":        "You are now known as {{newnick}}",
+  "event_banned":                "You were banned",
+  "event_connecting_retry":      "Retrying connection in {{interval}} seconds",
+  "event_connecting_failed":     "Failed to connect",
+  "event_connected":             "Connected to {{hostname}}",
+  "event_joining":               "Joining {{channels}}",
+  "event_user_mode":             "Your mode is +{{newmode}}",
+  "event_joined_channel":        "{{nick}} has joined",
+  "event_parted_channel":        "{{nick}} has left",
+  "event_quit":                  "{{nick}} has quit",
+  "event_away":                  "{{nick}} is away",
+  "event_kicked_channel":        "{{nick}} was kicked from {{chan}} by {{kicker}}: {{msg}}",
+  "event_you_joined_channel":    "You have joined",
+  "event_you_parted_channel":    "You have left",
+  "event_channel_mode_is":       "Mode is: {{newmode}}",
+  "event_channel_timestamp":     "Created at: {{timestamp}}",
+  "event_nickchange":            "{{oldnick}} is now known as {{newnick}}",
+  "event_user_channel_mode":     "Mode {{diff}} {{nick}} by {{from}}",
+  "event_channel_url":           "Channel URL: {{url}}",
+  "event_channel_topic":         "{{nick}} set the topic: {{topic}}",
+  "event_channel_topic_cleared": "{{nick}} cleared the topic",
+  "event_channel_mode":          "Channel mode: {{diff}} by {{from}}"
+};
+
 var AppView = Backbone.View.extend({
   initialize: function (options) {
     _.bindAll(this, 'addNetwork', 'removeNetwork');
@@ -151,40 +180,46 @@ var MemberListRowView = Backbone.View.extend({
 });
 
 var BufferView = Backbone.View.extend({
-  initialize: function () {
-    _.bindAll(this, 'addLine', 'addTextLine');
+  className: 'buffer',
 
+  initialize: function () {
+    _.bindAll(this, 'addEvent');
+
+    $(this.el).addClass('buffer');
     // FIXME: Is it OK to have '#' in ID?
     this.el.id = 'buffer-' + this.model.get('name');
 
     this.model.view = this;
-    this.model.bind('text_line', this.addTextLine);
-    this.model.bind('line', this.addLine);
+    this.model.bind('event', this.addEvent);
   },
-  
+
   show: function () {
     $('#buffers div').removeClass('active');
     $(this.el).addClass('active');
   },
-  
-  addTextLine: function (line) {
-    $(this.el).append($('<p>').html(line));
-  },
 
-  addLine: function (message) {
-    message.raw = JSON.stringify(message);
-    message.datetime = Util.explodeDateTime(new Date(message.time*1000));
-    
-    rendered_message = ich[message.type](message);
-    $(rendered_message).find('a').linkify({
-    //message.msg = p(message.msg);
-    //$(message.msg).linkify({
-      handleLinks: function (links) {
-        links
-          .prop('target', '_new');
-      }
-    });
-    //rendered_message = ich[message.type](message);
-    $(this.el).append(rendered_message);
+  addEvent: function (event) {
+    var text;
+
+    var template = BUFFER_EVENTS[event.type];
+    if (template) {
+      text = _.template(templateString, event);
+    } else if (event.msg) {
+      text = event.msg;
+    }
+
+    if (text) {
+      var rendered = ich.buffer_event({
+        datetime: Util.explodeDateTime(new Date(event.time*1000)),
+        from:     event.nick || event.from,
+        msg:      text
+      });
+      $(rendered).find('a').linkify({
+        handleLinks: function (links) {
+          return links.prop('target', '_new');
+        }
+      })
+      $(this.el).append(rendered);
+    }
   }
 });

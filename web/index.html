@@ -42,71 +42,21 @@
       <a href="{{url}}" title="{{nick}}">{{nick}}</a>
     </script>
     
-    <script type="text/html" id="buffer_msg">
-      <p class="message">
-        <span class="info">
-          <span class="sender">{{from}}</span>
-          <span class="time">
-            {{datetime.hours}}:{{datetime.minutes}}:{{datetime.seconds}}
-          </span>
-        </span>
-        <span class="body"><a title="{{raw}}">{{msg}}</a></span>
-      </p>
+    <script type="text/html" id="buffer_event">
+      <div class="event">
+        <span class="when">{{datetime.hours}}:{{datetime.minutes}}:{{datetime.seconds}}</span>
+        <span class="who">{{from}}</span>
+        <span class="message">{{msg}}</span>
+      </div>
     </script>
-
-    <script type="text/html" id="buffer_me_msg">
-      <p class="message">
-        <span class="info">
-          <span class="sender">*</span>
-          <span class="time">
-            {{datetime.hours}}:{{datetime.minutes}}:{{datetime.seconds}}
-          </span>
-        </span>
-        <span class="body"><a title="{{raw}}">{{from}} {{msg}}</a></span>
-      </p>
-    </script>
-    
-    <script type="text/html" id="joined_channel">
-      <p class="message">
-        <span class="info">
-          <span class="time">
-            {{datetime.hours}}:{{datetime.minutes}}:{{datetime.seconds}}
-          </span>
-        </span>
-        <span class="body"><a title="{{raw}}">{{nick}} has joined.</a></span>
-      </p>
-    </script>
-    
-    <script type="text/html" id="parted_channel">
-      <p class="message">
-        <span class="info">
-          <span class="time">
-            {{datetime.hours}}:{{datetime.minutes}}:{{datetime.seconds}}
-          </span>
-        </span>
-        <span class="body"><a title="{{raw}}">{{nick}} has parted.</a></span>
-      </p>
-    </script>
-    
-    <script type="text/html" id="quit">
-      <p class="message">
-        <span class="info">
-          <span class="time">
-            {{datetime.hours}}:{{datetime.minutes}}:{{datetime.seconds}}
-          </span>
-        </span>
-        <span class="body"><a title="{{raw}}">{{nick}} has quit.</a></span>
-      </p>
-    </script>    
   </head>
   <body>
     <div id="app">
       <div id="main">
         <div id="topic">
-          
+          <div id="topic_text"></div>
         </div>
         <div id="buffers">
-          
         </div>
         <div id="entry">
           <input type="text" />
