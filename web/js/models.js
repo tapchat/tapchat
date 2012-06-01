@@ -179,6 +179,13 @@ var Network = Backbone.Model.extend({
 
       buffer.network = this;
       this.bufferList.add(buffer);
+
+      var nid = buffer.get('nid');
+      var bid = buffer.get('bid');
+      var isConsole = buffer instanceof ConsoleBuffer;
+      if (nid == app.controller.networkId && ((bid == app.controller.bufferId) || (isConsole && app.controller.bufferId == null))) {
+        app.controller.buffer(buffer.get('nid'), buffer.get('id'));
+      }
     },
 
     end_of_backlog: function (message) {

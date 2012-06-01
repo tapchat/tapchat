@@ -133,6 +133,7 @@ var BufferListRowView = Backbone.View.extend({
 
 var MemberListView = Backbone.View.extend({
   tagName: 'ul',
+  className: 'unstyled',
   
   initialize: function () {
     // FIXME: Is it OK to have '#' in ID?

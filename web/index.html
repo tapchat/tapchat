@@ -3,25 +3,27 @@
   <head>
     <meta charset="utf-8" />
     <title>TapChat</title>
+    <link rel="stylesheet" href="css/bootstrap.css" type="text/css" />
     <link rel="stylesheet" href="css/tapchat.css" type="text/css" />
     <script type="text/javascript" src="js/lib/jquery-1.7.1.js"></script>
     <script type="text/javascript" src="js/lib/underscore.js"></script>
     <script type="text/javascript" src="js/lib/backbone.js"></script>
     <script type="text/javascript" src="js/lib/ICanHaz.js"></script>
     <script type="text/javascript" src="js/lib/jquery-linkify.js"></script>
-    
+    <script type="text/javascript" src="js/lib/bootstrap-modal.js"></script>
+    <script type="text/javascript" src="js/lib/bootbox.js"></script>
     <script type="text/javascript" src="js/util.js"></script>
     <script type="text/javascript" src="js/models.js"></script>
     <script type="text/javascript" src="js/collections.js"></script>
     <script type="text/javascript" src="js/views.js"></script>
     <script type="text/javascript" src="js/routers.js"></script>
     <script type="text/javascript" src="js/main.js"></script>
-        
+
     <script type="text/html" id="NetworkListRowView">
       <div class="networkInfo"></div>
-      <ul class="bufferList"></ul>
-    </script>    
-    
+      <ul class="bufferList unstyled"></ul>
+    </script>
+
     <script type="text/html" id="NetworkListRowInfoView">
       <a href="{{url}}" title="{{title}}">{{name}}</a>
     </script>
@@ -29,19 +31,15 @@
     <script type="text/html" id="BufferListRowView">
       <a href="{{url}}">{{name}}</a>
     </script>
-    
-    <script type="text/html" id="UsersListView">
-      <ul class="userList {{class}}"></ul>
-    </script>
-    
+
     <script type="text/html" id="UserListRowView">
       <a href="{{url}}" title="{{title}}">{{nick}}</a>
     </script>
-    
+
     <script type="text/html" id="MemberListRowView">
       <a href="{{url}}" title="{{nick}}">{{nick}}</a>
     </script>
-    
+
     <script type="text/html" id="buffer_event">
       <div class="event">
         <span class="when">{{datetime.hours}}:{{datetime.minutes}}:{{datetime.seconds}}</span>
@@ -62,12 +60,19 @@
           <input type="text" />
         </div>
       </div>
-      <div id="sidebar">
-        <ul id="networks">
+      <div id="sidebar" data-ajax="false">
+        <ul id="networks" class="unstyled">
         </ul>
-        <div id="users">
+        <div id="users" class="unstyled">
         </div>
       </div>
+    </div>
+    <div id="login" class="hide">
+      <h3>Welcome to TapChat</h3>
+      <p>Please login to continue.</p>
+      <form>
+      <input type="password" class="input-medium" id="password" placeholder="Password">
+    </form>
     </div>
   </body>
 </html>

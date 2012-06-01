@@ -1,4 +1,7 @@
+*.DS_Store
+
 *.node
 *.a
 *.dylib
 *.o
+*.lock-wscript

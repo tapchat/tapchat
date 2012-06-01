@@ -11,6 +11,34 @@ function App () {
 App.prototype = {
   _reqid: 0,
 
+  connect: function (password) {
+    if (this.socket) {
+      return;
+    }
+
+    scheme = (window.location.protocol === 'https:') ? 'wss' : 'ws';
+    this.socket = new WebSocket(scheme + "://" + window.location.host + "/chat/stream?password=" + password);
+
+    var that = this;
+
+    this.socket.onopen = function(evt) {
+      console.info("Connection open ...");
+    };
+
+    this.socket.onmessage = function(evt) {
+      console.info(evt.data);
+      that.processMessage(JSON.parse(evt.data));
+    };
+
+    this.socket.onclose = function(evt) {
+      console.info("Connection closed.");
+    };
+
+    this.socket.onerror = function() {
+      console.info("ERROR!", arguments);
+    }
+  },
+
   processMessage: function (message) {
     if (message._reqid) {
       // FIXME: Not implemented;
@@ -80,6 +108,34 @@ App.prototype = {
   }
 };
 
+var UI = {
+  showLoginDialog: function () {
+    var content = $('#login');
+    content.removeClass('hide');
+    var dialog = bootbox.dialog(content, {
+      "label" : "Login",
+      "class" : "btn-primary",
+      "callback": function() {
+          var password = dialog.find("input[type=password]").val()
+          if (password.length == 0) {
+            return false;
+          }
+          app.connect(password);
+          return true;
+      }
+    }, {
+      "animate": false,
+      "backdrop": "static"
+    });
+
+    dialog.find('form').on('submit', function (e) {
+      e.preventDefault();
+      dialog.find(".btn-primary").click();
+    });
+
+    dialog.find("input[type=password]").focus();
+  }
+};
 
 $(function () {
   window.app = new App();
@@ -87,27 +143,6 @@ $(function () {
     el: $('#app')
   });
 
-  password = prompt('enter password');
-  scheme = (window.location.protocol === 'https:') ? 'wss' : 'ws';
-  window.app.socket = new WebSocket(scheme + "://" + window.location.host + "/chat/stream?password=" + password);
-  
-  window.app.socket.onopen = function(evt) {
-    console.info("Connection open ..."); 
-  };
-  
-  window.app.socket.onmessage = function(evt) {
-    console.info(evt.data);
-    window.app.processMessage(JSON.parse(evt.data)); 
-  };
-  
-  window.app.socket.onclose = function(evt) {
-    console.info("Connection closed."); 
-  };
-
-  window.app.socket.onerror = function() {
-    console.info("ERROR!", arguments);
-  }
-  
   Backbone.history.start();
 
   $('#entry input').keypress(function(event) {
@@ -120,7 +155,6 @@ $(function () {
       // FIXME
       var network = window.app.controller.current_network;
       var buffer  = window.app.controller.current_buffer;
-
 
       var msg = {
             cid: network.get('nid'),
@@ -135,4 +169,12 @@ $(function () {
       window.app._reqid ++;
     }
   });
+
+  // FIXME
+  var password = null;
+  if (password) {
+    app.connect(password);
+  } else {
+    UI.showLoginDialog();
+  }
 });
