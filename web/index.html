@@ -3,7 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <title>TapChat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimum-scale=1.0, maximum-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+
     <link rel="stylesheet" href="css/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="css/bootstrap-responsive.css" type="text/css" />
     <link rel="stylesheet" href="css/tapchat.css" type="text/css" />
     <script type="text/javascript" src="js/lib/jquery-1.7.1.js"></script>
     <script type="text/javascript" src="js/lib/underscore.js"></script>
@@ -11,8 +15,12 @@
     <script type="text/javascript" src="js/lib/ICanHaz.js"></script>
     <script type="text/javascript" src="js/lib/jquery-linkify.js"></script>
     <script type="text/javascript" src="js/lib/bootstrap-modal.js"></script>
+    <script type="text/javascript" src="js/lib/bootstrap-dropdown.js"></script>
     <script type="text/javascript" src="js/lib/bootbox.js"></script>
+    <script type="text/javascript" src="js/lib/jquery.tappable.js"></script>
+    <script type="text/javascript" src="js/lib/scrollfix.js"></script>
     <script type="text/javascript" src="js/util.js"></script>
+    <script type="text/javascript" src="js/app.js"></script>
     <script type="text/javascript" src="js/models.js"></script>
     <script type="text/javascript" src="js/collections.js"></script>
     <script type="text/javascript" src="js/views.js"></script>
@@ -26,14 +34,6 @@
 
     <script type="text/html" id="NetworkListRowInfoView">
       <a href="{{url}}" title="{{title}}">{{name}}</a>
-    </script>
-
-    <script type="text/html" id="BufferListRowView">
-      <a href="{{url}}">{{name}}</a>
-    </script>
-
-    <script type="text/html" id="UserListRowView">
-      <a href="{{url}}" title="{{title}}">{{nick}}</a>
     </script>
 
     <script type="text/html" id="MemberListRowView">
@@ -50,20 +50,40 @@
   </head>
   <body>
     <div id="app">
-      <div id="main">
-        <div id="topic">
-          <div id="topic_text"></div>
+      <div id="nav">
+          <!--
+        <div>
+          <button class="btn dropdown-toggle" data-toggle="dropdown">Menu <b class="caret"></b></button>
+          <ul class="dropdown-menu">
+            <li><a href="#">Action</a></li>
+            <li><a href="#">Another action</a></li>
+            <li><a href="#">Something else here</a></li>
+            <li class="divider"></li>
+            <li><a href="#">Separated link</a></li>
+          </ul>
         </div>
-        <div id="buffers">
-        </div>
-        <div id="entry">
-          <input type="text" />
+        -->
+        <div id="title"></div>
+        <div>
+          <button id="members-btn" class="btn tappable"><i class="icon-user"></i></button>
         </div>
       </div>
-      <div id="sidebar" data-ajax="false">
-        <ul id="networks" class="unstyled">
-        </ul>
-        <div id="users" class="unstyled">
+      <div id="page">
+        <div id="main">
+          <div id="topic">
+            <div id="topic_text"></div>
+          </div>
+          <div id="buffers-outer">
+            <div id="buffers">
+            </div>
+          </div>
+          <div id="entry">
+            <input type="text" />
+          </div>
+        </div>
+        <div id="sidebar">
+          <ul id="networks" class="unstyled"></ul>
+          <div id="users" class="unstyled"></div>
         </div>
       </div>
     </div>

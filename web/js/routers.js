@@ -49,10 +49,13 @@ var Router = Backbone.Router.extend({
           $('#users ul').removeClass('active');
 
         var topic = buffer.get('topic_text');
-        if (topic)
+        if (topic) {
           $('#topic #topic_text').html(topic);
-        else
+        } else {
           $('#topic #topic_text').html('');
+        }
+
+        $('#title').html(buffer.get('name'));
 
         this.current_network = network;
         this.current_buffer  = buffer;

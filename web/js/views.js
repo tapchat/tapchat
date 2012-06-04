@@ -33,12 +33,12 @@ var AppView = Backbone.View.extend({
     window.app.networkList.bind('add', this.addNetwork);
     window.app.networkList.bind('remove', this.removeNetwork);
   },
-  
+
   addNetwork: function (network) {
     var view = new NetworkListRowView({ model: network });
     $('#networks').append(view.render().el);
   },
-  
+
   removeNetwork: function (network) {
     network.view.remove();
   }
@@ -46,52 +46,57 @@ var AppView = Backbone.View.extend({
 
 var NetworkListRowView = Backbone.View.extend({
   tagName: 'li',
-  
+
   initialize: function () {
     _.bindAll(this, 'addBuffer', 'removeBuffer', 'render');
     this.model.bind('change', this.render);
     this.model.view = this;
-    
+
     $(this.el).html(ich.NetworkListRowView());
 
     this.render();
-    
+
     this.model.bufferList.bind('add', this.addBuffer);
     this.model.bufferList.bind('remove', this.removeBuffer);
   },
-    
+
   addBuffer: function (buffer) {
     // FIXME: Not really sure where to put all this.
     view = new BufferView({ model: buffer });
     $('#buffers').append(view.el);
-    
+
     // 'console' buffers are a special case
     if (buffer.get('name') == '*') {
       return;
     }
-    
+
     var view = new BufferListRowView({ model: buffer });
     this.$('.bufferList').append(view.render().el);
-    
+
     if (buffer.get('buffer_type') == 'channel') {
       view = new MemberListView({ model: buffer });
       $('#users').append(view.render().el);
     }
   },
-  
+
   removeBuffer: function (buffer) {
     buffer.listRowView.remove();
   },
-  
+
   select: function () {
     $('#networks li').removeClass('active');
     $(this.el).addClass('active');
   },
-  
+
   render: function () {
-    var data = this.model.toJSON();
-    data.url = '#' + this.model.id;
-    this.$('.networkInfo').html(ich.NetworkListRowInfoView(data));
+    var url = '#' + this.model.id;
+
+    var a = $('<a>').addClass('tappable').html(this.model.get('name'))
+    this.$('.networkInfo').empty().append(a);
+    a.tappable(function () {
+      window.location = url;
+    });
+
     return this;
   }
 });
@@ -109,24 +114,30 @@ var BufferListRowView = Backbone.View.extend({
       $(this.el).addClass('archived');
     }
   },
-  
+
   select: function () {
     $('#networks li').removeClass('active');
     $(this.el).addClass('active');
   },
-  
+
   hide: function () {
     $(this.el).addClass('archived');
     this.render();
   },
-  
-  render: function () {
-    var data = this.model.toJSON();
 
+  render: function () {
     var network = app.networkList.get(this.model.get('nid'));
-    data.url = '#' + network.id + '/' + this.model.id;
-    
-    $(this.el).html(ich.BufferListRowView(data));
+    var url = '#' + network.id + '/' + this.model.id;
+
+    var a = $('<a>').addClass('tappable').html(this.model.get('name'));
+
+    $(this.el).html('');
+    $(this.el).append(a);
+
+    a.tappable(function () {
+      window.location = url;
+    });
+
     return this;
   }
 });
@@ -163,16 +174,16 @@ var MemberListView = Backbone.View.extend({
 
 var MemberListRowView = Backbone.View.extend({
   tagName: 'li',
-  
+
   initialize: function () {
     _.bindAll(this, 'render');
     this.model.bind('change', this.render);
     this.model.view = this;
   },
-  
+
   render: function () {
     $(this.el).attr('class', this.model.get('op') ? 'op' : '');
-    
+
     var data = this.model.toJSON();
     data.url = "javascript:alert('not implemented')"; // FIXME
     $(this.el).html(ich.MemberListRowView(data));
@@ -197,6 +208,8 @@ var BufferView = Backbone.View.extend({
   show: function () {
     $('#buffers div').removeClass('active');
     $(this.el).addClass('active');
+
+    this.scrollToBottom();
   },
 
   addEvent: function (event) {
@@ -222,8 +235,12 @@ var BufferView = Backbone.View.extend({
       })
       $(this.el).append(rendered);
 
-      // FIXME: This should only scroll the active buffer.
-      $('#buffers').scrollTop(this.el.scrollHeight);
+      this.scrollToBottom();
     }
+  },
+
+  scrollToBottom: function () {
+    // FIXME: This should only scroll the active buffer.
+    $('#buffers').scrollTop(this.el.scrollHeight);
   }
 });
