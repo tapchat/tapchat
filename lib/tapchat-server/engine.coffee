@@ -35,7 +35,7 @@ class Engine
         @addConnection connInfo for connInfo in conns
 
   startServer: (port) ->
-    @app = Express.createServer()
+    @app = Express.createServer(Express.logger())
 
     @app.use(Express.static(__dirname + '/../../web'));
 

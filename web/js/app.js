@@ -12,8 +12,11 @@ App.prototype = {
       return;
     }
 
-    scheme = (window.location.protocol === 'https:') ? 'wss' : 'ws';
-    this.socket = new WebSocket(scheme + "://" + window.location.host + "/chat/stream?password=" + password);
+    var scheme  = (window.location.protocol === 'https:') ? 'wss' : 'ws';
+    var address = scheme + "://" + window.location.host + "/chat/stream?password=" + encodeURIComponent(password);
+    console.log('Websocket address is: ' + address);
+
+    this.socket = new WebSocket(address);
 
     var that = this;
 
@@ -27,11 +30,11 @@ App.prototype = {
     };
 
     this.socket.onclose = function(evt) {
-      console.info("Connection closed.");
+      console.info("Websocket connection closed.", evt);
     };
 
     this.socket.onerror = function() {
-      console.info("ERROR!", arguments);
+      console.info("Websocket error:", arguments);
     }
   },
 
