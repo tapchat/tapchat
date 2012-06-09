@@ -144,6 +144,12 @@ var Network = Backbone.Model.extend({
     this.bufferList = new BufferList();
   },
 
+  getConsoleBuffer: function () {
+    return this.bufferList.find(function (buffer) {
+      return (buffer instanceof ConsoleBuffer);
+    });
+  },
+
   processMessage: function (message) {
     var type = message.type;
     if (this.messageHandlers[type]) {

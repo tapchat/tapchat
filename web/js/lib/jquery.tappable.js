@@ -139,6 +139,7 @@
       }
     } else if (typeof callback == 'function') {
       this.bind('click', function(event) {
+        event.preventDefault();
         if (onlyIf(this)) {
           callback.call(this, event)
         }

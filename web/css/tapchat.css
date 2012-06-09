@@ -52,38 +52,68 @@ body {
   padding: 0 10px;
   display: table-cell;
   vertical-align: middle;
+  position: relative;
 }
 
-#nav #title {
+#nav div#left {
   width: 100%;
 }
 
-#page {
-  position: absolute;
-  top: 44px;
-  right: 0px;
-  bottom: 0px;
-  left: 0px;
+#nav #main-menu-button {
+  display: none;
 }
 
-#main {
+#nav #logo {
+  position: absolute;
+  text-align: center;
+  width: 100%;
+}
+
+#pages {
+  position: absolute;
+  top: 44px;
+  bottom: 0px;
+  left: 0px;
+  right: 160px;
+}
+
+.page {
+  display: none;
   position: absolute;
   top: 0px;
   left: 0px;
-  right: 160px;
   bottom: 0px;
+  right: 0px;
+}
+
+.page.active {
+  display: block !important;
 }
 
 #sidebar {
-  width: 160px;
-
   position: absolute;
   right: 0px;
   width: 160px;
   height: 100%;
-
   border-left: 1px solid #BBB;
   background: white;
+}
+
+#app.not-buffer #sidebar {
+  display: none !important;
+}
+
+#app.not-buffer #pages {
+  right: 0px !important;
+}
+
+#app.not-buffer #members-btn {
+  /*display: none !important;*/
+  visibility: hidden !important;
+}
+
+#networks {
+  border-bottom: 1px solid #BBB;
 }
 
 #networks, #users {
@@ -114,7 +144,8 @@ body {
   font-size: 13px;
 }
 
-#networks li .networkInfo {
+#networks li a.networkInfo {
+  disply: block;
   border-bottom: 1px solid #bbb;
   background: #EEE;
 }
@@ -156,7 +187,6 @@ body {
 }
 
 #users {
-  border-top: 1px solid #BBB;
   margin: 0;
 }
 
@@ -177,19 +207,19 @@ body {
   background: url('../img/op.png') left center no-repeat;
 }
 
-#topic {
+.topic {
   height: 30px;
   background: #EEE;
   border-bottom: 1px solid #BBB;
 }
 
-#topic #topic_text {
+.topic #topic_text {
   padding-top: 6px;
   padding-left: 6px;
   font-size: 14px;
 }
 
-#buffers-outer {
+.events-outer {
   width: 100%;
   background-color: #f8f8fa;
   font-size: 9pt;
@@ -202,7 +232,7 @@ body {
   bottom: 32px;
 }
 
-#buffers {
+.events {
   height: 100%;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
@@ -220,7 +250,7 @@ body {
   display: block;
 }
 
-#entry {
+.entry {
   background: #fff;
   border-top: 1px solid #bbb;
   width: 100%;
@@ -238,7 +268,7 @@ body {
   padding: 6px;
 }
 
-#entry input {
+.entry input {
   -webkit-box-shadow: none;
    -moz-box-shadow: none;
   box-shadow: none;
@@ -288,13 +318,55 @@ body {
   #sidebar:not(.show) {
     display: none;
   }
-  #main {
+  #sidebar #networks {
+    display: none !important;
+  }
+  #sidebar #users {
+    height: 100%;
+  }
+  #pages {
     right: 0px;
+  }
+  #nav #main-menu-button {
+    display: block !important;
+  }
+  #nav #settings-btn {
+    display: none !important;
   }
 }
 
 @media only screen and (min-width: 640px) {
   #members-btn {
-    display: none;
+    /*display: none;*/
+    visibility: hidden !important;
   }
 }
+
+#add-server input[type="text"] {
+  margin-bottom: 9px;
+}
+
+#page-settings {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  top: 0px;
+
+  background: white;
+
+  box-sizing: border-box;
+  -o-box-sizing: border-box;
+  -icab-box-sizing: border-box;
+  -khtml-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+ }
+
+ #page-settings ul.nav-tabs {
+  padding-top: 10px;
+  padding-left: 10px;
+ }
+
+ #page-settings #settings-networks {
+  padding: 0 10px 10px 10px;
+ }

@@ -16,6 +16,7 @@
     <script type="text/javascript" src="js/lib/jquery-linkify.js"></script>
     <script type="text/javascript" src="js/lib/bootstrap-modal.js"></script>
     <script type="text/javascript" src="js/lib/bootstrap-dropdown.js"></script>
+    <script type="text/javascript" src="js/lib/bootstrap-button.js"></script>
     <script type="text/javascript" src="js/lib/bootbox.js"></script>
     <script type="text/javascript" src="js/lib/jquery.tappable.js"></script>
     <script type="text/javascript" src="js/lib/scrollfix.js"></script>
@@ -28,7 +29,7 @@
     <script type="text/javascript" src="js/main.js"></script>
 
     <script type="text/html" id="NetworkListRowView">
-      <div class="networkInfo"></div>
+      <a class="tappable networkInfo">{{name}}</a>
       <ul class="bufferList unstyled"></ul>
     </script>
 
@@ -47,52 +48,117 @@
         <span class="message">{{msg}}</span>
       </div>
     </script>
+
+    <script type="text/html" id="BufferView">
+      <div class="topic">
+        <div id="topic_text"></div>
+      </div>
+      <div class="events-outer">
+        <div class="events"></div>
+      </div>
+      <div class="entry">
+        <input type="text" />
+      </div>
+    </script>
+
+    <script type="text/html" id="LoginDialog">
+      <div id="login">
+        <h3>Welcome to TapChat</h3>
+        <p>Please login to continue.</p>
+        <form>
+          <input type="password" class="input-medium" id="password" placeholder="Password">
+        </form>
+      </div>
+    </script>
+
+    <script type="text/html" id="AddServerDialog">
+      <div id="add-server">
+        <form class="form-horizontal">
+          <fieldset>
+            <div class="control-group">
+              <label class="control-label">Connection</label>
+              <div class="controls">
+                <input type="text" class="input-medium" placeholder="irc.example.com">
+                <input type="text" class="input-mini" placeholder="6667">
+                <label class="checkbox">
+                  <input type="checkbox"> Secure Conncetion (SSL)
+                </label>
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label">Identity</label>
+              <div class="controls">
+                <input type="text" class="input-medium" placeholder="Nickname" />
+                <br>
+                <input type="text" class="input-medium" placeholder="Real Name" />
+              </div>
+            </fieldset>
+        </form>
+      </div>
+    </script>
+
+    <script type="text/html" id="JoinChannelDialog">
+      <div id="join-channel">
+        <form class="form-horizontal">
+          <fieldset>
+            <div class="control-group">
+              <label class="control-label">Network</label>
+              <div class="controls">
+                <select>
+                  {{#networks}}
+                    <option value="{{id}}">{{name}}</option>
+                  {{/networks}}
+                </select>
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label">Channel</label>
+              <div class="controls">
+                <input type="text" id="channel" placeholder="#channel" />
+              </div>
+            </div>
+          </fieldset>
+        </form>
+      </div>
+    </script>
+
+    <script type="text/html" id="Settings">
+      <ul class="nav nav-tabs">
+        <li class="active"><a>IRC Networks</a></li>
+      </ul>
+      <div class="tab-pane active" id="settings-networks">
+        <button id="add-network-btn" class="btn">Add IRC Network</button>
+      </div>
+    </script>
+
   </head>
   <body>
     <div id="app">
       <div id="nav">
-          <!--
-        <div>
-          <button class="btn dropdown-toggle" data-toggle="dropdown">Menu <b class="caret"></b></button>
-          <ul class="dropdown-menu">
-            <li><a href="#">Action</a></li>
-            <li><a href="#">Another action</a></li>
-            <li><a href="#">Something else here</a></li>
+        <div id="logo">
+          TapChat
+        </div>
+
+        <div id="left">
+          <button id="main-menu-button" class="btn dropdown-toggle" data-toggle="dropdown"><span id="title"></span> <b class="caret"></b></button>
+          <ul id="main-menu" class="dropdown-menu">
             <li class="divider"></li>
-            <li><a href="#">Separated link</a></li>
+            <li><a href="#" id="settings-item"><i class="icon-cog"></i> Settings</a></li>
           </ul>
         </div>
-        -->
-        <div id="title"></div>
+
         <div>
-          <button id="members-btn" class="btn tappable"><i class="icon-user"></i></button>
+          <button id="members-btn" class="btn" data-toggle="button"><i class="icon-user"></i></button>
+          <button id="settings-btn" class="btn"><i class="icon-cog"></i></button>
         </div>
       </div>
-      <div id="page">
-        <div id="main">
-          <div id="topic">
-            <div id="topic_text"></div>
-          </div>
-          <div id="buffers-outer">
-            <div id="buffers">
-            </div>
-          </div>
-          <div id="entry">
-            <input type="text" />
-          </div>
-        </div>
-        <div id="sidebar">
-          <ul id="networks" class="unstyled"></ul>
-          <div id="users" class="unstyled"></div>
-        </div>
+
+      <div id="pages"></div>
+
+      <div id="sidebar">
+        <ul id="networks" class="unstyled"></ul>
+        <div id="users" class="unstyled"></div>
       </div>
-    </div>
-    <div id="login" class="hide">
-      <h3>Welcome to TapChat</h3>
-      <p>Please login to continue.</p>
-      <form>
-      <input type="password" class="input-medium" id="password" placeholder="Password">
-    </form>
     </div>
   </body>
 </html>

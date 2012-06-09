@@ -2,77 +2,45 @@ _.templateSettings = {
   interpolate : /\{\{(.+?)\}\}/g
 };
 
-var UI = {
-  showLoginDialog: function () {
-    var content = $('#login');
-    content.removeClass('hide');
-    var dialog = bootbox.dialog(content, {
-      "label" : "Login",
-      "class" : "btn-primary",
-      "callback": function() {
-          var password = dialog.find("input[type=password]").val()
-          if (password.length == 0) {
-            return false;
-          }
-          app.connect(password);
-          return true;
-      }
-    }, {
-      "animate": false,
-      "backdrop": "static"
-    });
-
-    dialog.find('form').on('submit', function (e) {
-      e.preventDefault();
-      dialog.find(".btn-primary").click();
-    });
-
-    dialog.find("input[type=password]").focus();
-  },
-
-  sendMessage: function (text) {
-    if (text == "") return;
-
-    // FIXME
-    var network = window.app.controller.current_network;
-    var buffer  = window.app.controller.current_buffer;
-
-    var msg = {
-          cid: network.get('nid'),
-           to: buffer.get('name'),
-          msg: text,
-       _reqid: window.app._reqid,
-      _method: "say"
-    };
-    window.app.send(msg);
-  }
-};
-
 $(function () {
   window.app = new App();
   window.app.view = new AppView({
     el: $('#app')
   });
 
-  Backbone.history.start();
+  window.app.main_menu = new MainMenuView();
 
-  $('#entry input').keypress(function(event) {
-    if (event.keyCode == 13) {
-      var text = $(this).val();
-      $(this).val('');
-      UI.sendMessage(text);
-    }
-  });
+  window.app.settings = new SettingsView();
+  $('#pages').append(window.app.settings.el);
+
+  Backbone.history.start();
 
   // FIXME
   var password = null;
   if (password) {
     app.connect(password);
   } else {
-    UI.showLoginDialog();
+    app.view.showLoginDialog();
   }
 
-  $('.tappable').tappable(function () {
+  $('#settings-item').tappable(function () {
+    app.controller.navigate('settings', { trigger: true });
+  });
+
+  $('#settings-btn').tappable(function () {
+    var currentPath = window.location.hash.substring(1);
+    console.log('got current path', currentPath);
+    if (currentPath !== 'settings') {
+      this.beforeSettings = currentPath;
+      app.controller.navigate('settings', { trigger: true });
+    } else {
+      console.log('GOING BACK!!!', this.beforeSettings);
+      app.controller.navigate(this.beforeSettings, { trigger: true });
+      this.beforeSettings = null;
+    }
+  });
+
+  $('#members-btn').tappable(function () {
     $('#sidebar').toggleClass('show');
   });
 
@@ -121,5 +89,4 @@ $(function () {
       return scrollTop();
     },1);
   });
-
 });

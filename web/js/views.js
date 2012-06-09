@@ -29,7 +29,7 @@ var BUFFER_EVENTS = {
 
 var AppView = Backbone.View.extend({
   initialize: function (options) {
-    _.bindAll(this, 'addNetwork', 'removeNetwork');
+    _.bindAll(this, 'addNetwork', 'removeNetwork', 'addBuffer', 'removeBuffer');
     window.app.networkList.bind('add', this.addNetwork);
     window.app.networkList.bind('remove', this.removeNetwork);
   },
@@ -37,10 +37,138 @@ var AppView = Backbone.View.extend({
   addNetwork: function (network) {
     var view = new NetworkListRowView({ model: network });
     $('#networks').append(view.render().el);
+
+    network.bufferList.bind('add',    this.addBuffer);
+    network.bufferList.bind('remove', this.removeBuffer);
   },
 
   removeNetwork: function (network) {
     network.view.remove();
+
+    network.bufferList.unbind('add',    this.addBuffer);
+    network.bufferList.unbind('remove', this.removeBuffer);
+  },
+
+  addBuffer: function (buffer) {
+    view = new BufferView({ model: buffer });
+    buffer.view = view;
+    $('#pages').append(view.el);
+
+    if (buffer.get('buffer_type') == 'channel') {
+      buffer.memberListView = new MemberListView({ model: buffer });
+      $('#users').append(buffer.memberListView.render().el);
+    }
+  },
+
+  removeBuffer: function (buffer) {
+    buffer.view.remove();
+
+    if (buffer.get('buffer_type') == 'channel') {
+      buffer.memberListView.remove();
+    }
+  },
+
+  showPage: function (pageView) {
+    if (this.currentPage) {
+      $(this.currentPage.el).removeClass('active');
+    }
+
+    this.currentPage = pageView;
+
+    if (pageView != null) {
+      $(pageView.el).addClass('active');
+      this.setTitle(pageView.getTitle());
+    } else {
+      this.setTitle('');
+    }
+
+    // This is a bit of a special case hack here...
+    var isBuffer = (this.currentPage instanceof BufferView);
+    if (this.currentPage == null || isBuffer) {
+      $('#app').removeClass('not-buffer');
+    } else {
+      $('#app').addClass('not-buffer');
+    }
+
+    // FIXME: Move
+    app.view.trigger('page-changed', this.currentPage);
+  },
+
+  setTitle: function (text) {
+    $('#title').html(text);
+  },
+
+  showAddServerDialog: function () {
+    var content = ich.AddServerDialog();
+    var dialog = bootbox.dialog(content, [
+      {
+        "label": "Add Network",
+        "class": "btn-primary"
+      },
+      {
+        "label": "Cancel",
+        "class": "btn"
+      }
+    ], {
+        "header": "Add IRC Network",
+        "animate": false,
+        "backdrop": "static"
+    });
+  },
+
+  showLoginDialog: function () {
+    var content = ich.LoginDialog();
+    var dialog = bootbox.dialog(content, {
+      "label" : "Login",
+      "class" : "btn-primary",
+      "callback": function() {
+          var password = dialog.find("input[type=password]").val()
+          if (password.length == 0) {
+            return false;
+          }
+          app.connect(password);
+          return true;
+      }
+    }, {
+      "animate": false,
+      "backdrop": "static"
+    });
+
+    dialog.find('form').on('submit', function (e) {
+      e.preventDefault();
+      dialog.find(".btn-primary").click();
+    });
+
+    dialog.find("input[type=password]").focus();
+  },
+
+  showJoinChannelDialog: function () {
+    var content = ich.JoinChannelDialog({
+      networks: app.networkList.models.map(function (m) {
+        return m.attributes;
+      })
+    });
+    var dialog = bootbox.dialog(content,
+      [
+        {
+          "label": "Join",
+          "class": "btn-primary",
+          "callback": function () {
+
+          }
+        },
+        {
+          "label": "Cancel",
+          "class": "btn"
+        }
+      ],
+      {
+        "header": "Join Channel",
+        "animate": false,
+        "backdrop": "static"
+      }
+    );
+    dialog.find('input#channel').focus();
   }
 });
 
@@ -48,35 +176,34 @@ var NetworkListRowView = Backbone.View.extend({
   tagName: 'li',
 
   initialize: function () {
-    _.bindAll(this, 'addBuffer', 'removeBuffer', 'render');
+    _.bindAll(this, 'addBuffer', 'removeBuffer', 'render', 'pageChanged');
     this.model.bind('change', this.render);
     this.model.view = this;
 
-    $(this.el).html(ich.NetworkListRowView());
-
     this.render();
+
+    app.view.on('page-changed', this.pageChanged);
 
     this.model.bufferList.bind('add', this.addBuffer);
     this.model.bufferList.bind('remove', this.removeBuffer);
   },
 
-  addBuffer: function (buffer) {
-    // FIXME: Not really sure where to put all this.
-    view = new BufferView({ model: buffer });
-    $('#buffers').append(view.el);
+  pageChanged: function(page) {
+    if (this.model.getConsoleBuffer() === page.model) {
+      $(this.el).addClass('active');
+    } else {
+      $(this.el).removeClass('active');
+    }
+  },
 
+  addBuffer: function (buffer) {
     // 'console' buffers are a special case
     if (buffer.get('name') == '*') {
       return;
     }
 
-    var view = new BufferListRowView({ model: buffer });
-    this.$('.bufferList').append(view.render().el);
-
-    if (buffer.get('buffer_type') == 'channel') {
-      view = new MemberListView({ model: buffer });
-      $('#users').append(view.render().el);
-    }
+    var bufferListView = new BufferListRowView({ model: buffer });
+    this.$('.bufferList').append(bufferListView.render().el);
   },
 
   removeBuffer: function (buffer) {
@@ -89,11 +216,13 @@ var NetworkListRowView = Backbone.View.extend({
   },
 
   render: function () {
-    var url = '#' + this.model.id;
+    $(this.el).empty();
+    $(this.el).append(ich.NetworkListRowView({
+      name: this.model.get('name')
+    }));
 
-    var a = $('<a>').addClass('tappable').html(this.model.get('name'))
-    this.$('.networkInfo').empty().append(a);
-    a.tappable(function () {
+    var url = '#' + this.model.id;
+    $(this.el).find('a.networkInfo').tappable(function () {
       window.location = url;
     });
 
@@ -103,15 +232,24 @@ var NetworkListRowView = Backbone.View.extend({
 
 var BufferListRowView = Backbone.View.extend({
   tagName: 'li',
-  
+
   initialize: function () {
-    _.bindAll(this, 'render', 'hide');
+    _.bindAll(this, 'render', 'hide', 'pageChanged');
     this.model.bind('change', this.render);
     this.model.bind('hidden', this.hide);
-    this.model.listRowView = this;
-    
+
+    app.view.on('page-changed', this.pageChanged);
+
     if (this.model.get('hidden') == true) {
       $(this.el).addClass('archived');
+    }
+  },
+
+  pageChanged: function(page) {
+    if (this.model === page.model) {
+      $(this.el).addClass('active');
+    } else {
+      $(this.el).removeClass('active');
     }
   },
 
@@ -131,7 +269,7 @@ var BufferListRowView = Backbone.View.extend({
 
     var a = $('<a>').addClass('tappable').html(this.model.get('name'));
 
-    $(this.el).html('');
+    $(this.el).empty();
     $(this.el).append(a);
 
     a.tappable(function () {
@@ -145,28 +283,32 @@ var BufferListRowView = Backbone.View.extend({
 var MemberListView = Backbone.View.extend({
   tagName: 'ul',
   className: 'unstyled',
-  
+
   initialize: function () {
     // FIXME: Is it OK to have '#' in ID?
     this.el.id = 'users-' + this.model.get('name');
-    
-    _.bindAll(this, 'addMember', 'removeMember');
-    
-    this.model.memberListView = this;
+
+    _.bindAll(this, 'addMember', 'removeMember', 'pageChanged');
+
+    app.view.on('page-changed', this.pageChanged);
+
     this.model.memberList.bind('add', this.addMember);
     this.model.memberList.bind('remove', this.removeMember);
   },
-  
-  show: function () {
-    $('#users ul').removeClass('active');
-    $(this.el).addClass('active');
+
+  pageChanged: function(page) {
+    if (page.model === this.model) {
+      $(this.el).addClass('active');
+    } else {
+      $(this.el).removeClass('active');
+    }
   },
-  
+
   addMember: function (member) {
     var view = new MemberListRowView({ model: member });
     $(this.el).append(view.render().el);
   },
-  
+
   removeMember: function (member) {
     member.view.remove();
   }
@@ -192,12 +334,24 @@ var MemberListRowView = Backbone.View.extend({
 });
 
 var BufferView = Backbone.View.extend({
-  className: 'buffer',
+  className: 'page buffer',
 
   initialize: function () {
-    _.bindAll(this, 'addEvent');
+    _.bindAll(this, 'addEvent', 'pageChanged');
 
-    $(this.el).addClass('buffer');
+    $(this.el).append(ich.BufferView());
+
+    var self = this;
+    this.$('.entry input').keypress(function(event) {
+      if (event.keyCode == 13) {
+        var text = $(this).val();
+        $(this).val('');
+        self.sendMessage(text);
+      }
+    });
+
+    app.view.on('page-changed', this.pageChanged);
+
     // FIXME: Is it OK to have '#' in ID?
     this.el.id = 'buffer-' + this.model.get('name');
 
@@ -205,11 +359,27 @@ var BufferView = Backbone.View.extend({
     this.model.bind('event', this.addEvent);
   },
 
-  show: function () {
-    $('#buffers div').removeClass('active');
-    $(this.el).addClass('active');
+  getTitle: function () {
+    if (this.model instanceof ConsoleBuffer) {
+        return this.model.network.get('name');
+    } else {
+      return this.model.get('name');
+    }
+  },
 
-    this.scrollToBottom();
+  render: function () {
+    var topic = this.model.get('topic_text');
+    if (topic) {
+      $(this.el).find('.topic_text').html(topic);
+    } else {
+      $(this.el).find('.topic_text').html('');
+    }
+  },
+
+  pageChanged: function (page) {
+    if (this === page) {
+      this.scrollToBottom();
+    }
   },
 
   addEvent: function (event) {
@@ -233,14 +403,72 @@ var BufferView = Backbone.View.extend({
           return links.prop('target', '_new');
         }
       })
-      $(this.el).append(rendered);
+      $(this.el).find('.events').append(rendered);
 
       this.scrollToBottom();
     }
   },
 
   scrollToBottom: function () {
-    // FIXME: This should only scroll the active buffer.
-    $('#buffers').scrollTop(this.el.scrollHeight);
+    console.log('scroll to: ' + this.$('.events')[0].scrollHeight);
+    this.$('.events').scrollTop(this.$('.events')[0].scrollHeight);
+  },
+
+  sendMessage: function (text) {
+    if (text == "") return;
+    var buffer = this.model;
+    var msg = {
+          cid: buffer.network.get('nid'),
+           to: buffer.get('name'),
+          msg: text,
+       _reqid: window.app._reqid,
+      _method: "say"
+    };
+    window.app.send(msg);
   }
 });
+
+var MainMenuView = Backbone.View.extend({
+  initialize: function (options) {
+    _.bindAll(this, 'addNetwork', 'removeNetwork');
+    window.app.networkList.bind('add', this.addNetwork);
+    window.app.networkList.bind('remove', this.removeNetwork);
+  },
+  addNetwork: function (network) {
+    var view = new NetworkListRowView({ model: network });
+    $('#main-menu').prepend(view.render().el);
+  },
+  removeNetwork: function (network) {
+    network.view.remove();
+  }
+});
+
+var SettingsView = Backbone.View.extend({
+  id: 'page-settings',
+  className: 'page',
+
+  initialize: function (options) {
+    _.bindAll(this, 'pageChanged');
+    app.view.on('page-changed', this.pageChanged);
+
+    $(this.el).append(ich.Settings);
+    this.$('#add-network-btn').click(function () {
+      app.view.showAddServerDialog();
+    });
+  },
+
+  pageChanged: function(page) {
+    if (page === this) {
+      $('#settings-btn').addClass('active');
+      $('#settings-item').parent('li').addClass('active');
+    } else {
+      $('#settings-btn').removeClass('active');
+      $('#settings-item').parent('li').removeClass('active');
+    }
+  },
+
+  getTitle: function() {
+    return 'Settings';
+  }
+});
+

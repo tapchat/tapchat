@@ -1,12 +1,17 @@
 var Router = Backbone.Router.extend({
   routes: {
     '':                     'index',
+    'settings':             'settings',
     ':networkId':           'network',
     ':networkId/:bufferId': 'buffer',
   },
 
   index: function () {
     this.buffer(-1, -1);
+  },
+
+  settings: function () {
+    app.view.showPage(app.settings);
   },
 
   network: function (networkId) {
@@ -24,8 +29,8 @@ var Router = Backbone.Router.extend({
   },
 
   buffer: function (networkId, bufferId) {
-    console.log('router buffer!!!', networkId, bufferId);
     if (networkId < 0 || bufferId < 0) {
+      app.view.showPage(null);
       return;
     }
 
@@ -36,36 +41,10 @@ var Router = Backbone.Router.extend({
     if (network) {
       var buffer = network.bufferList.get(bufferId);
       if (buffer) {
-        if (buffer.listRowView)
-          buffer.listRowView.select();
-        else
-          buffer.network.view.select();
-
-        buffer.view.show();
-
-        if (buffer.memberListView)
-          buffer.memberListView.show();
-        else
-          $('#users ul').removeClass('active');
-
-        var topic = buffer.get('topic_text');
-        if (topic) {
-          $('#topic #topic_text').html(topic);
-        } else {
-          $('#topic #topic_text').html('');
-        }
-
-        $('#title').html(buffer.get('name'));
-
-        this.current_network = network;
-        this.current_buffer  = buffer;
-
-        return;
+        app.view.showPage(buffer.view);
+      } else {
+        app.view.showPage(null);
       }
     }
-
-    $('#users ul').removeClass('active');
-    $('#networks li').removeClass('active');
-    $('#buffers div').removeClass('active');
   }
 });
