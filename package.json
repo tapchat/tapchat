@@ -1,5 +1,5 @@
 {
-  "name": "tapchat-server",
+  "name": "tapchat",
   "version": "0.0.1-48",
   "author": {
     "name": "Eric Butler",
@@ -9,7 +9,7 @@
   "main": "",
   "repository": {
     "type": "git",
-    "url": "git://github.com/codebutler/tapchat-server.git"
+    "url": "git://github.com/codebutler/tapchat.git"
   },
   "keywords": [
     "tapchat",
