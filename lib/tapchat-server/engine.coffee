@@ -1,3 +1,5 @@
+Path         = require('path')
+Fs           = require('fs')
 WorkingQueue = require('capisce').WorkingQueue
 Http         = require('http')
 Express      = require('express')
@@ -6,36 +8,45 @@ WebSocket    = require('faye-websocket')
 PasswordHash = require('password-hash')
 CoffeeScript = require('coffee-script')
 Util         = require('util')
+Daemon       = require('daemon')
 
-B          = require('./message_builder')
-Buffer     = require('./buffer')
-Connection = require('./connection')
-BacklogDB  = require('./backlog_db')
+Config     = require './config'
+B          = require './message_builder'
+Buffer     = require './buffer'
+Connection = require './connection'
+BacklogDB  = require './backlog_db'
 
 {starts, ends, compact, count, merge, extend, flatten, del, last} = CoffeeScript.helpers
 
 class Engine
-  constructor: (backlog_file) ->
-    console.log '--------------------------'
-    console.log 'engine start!'
-    console.log '--------------------------'
-
+  constructor: (config, callback) ->
     @connections = []
     @clients     = []
 
-    @password = process.env['TAPCHAT_PASS']
-    @port     = process.env['TAPCHAT_PORT'] || 3337
+    @password = config.password
+    @port     = config.port
 
     throw 'No password set!' unless PasswordHash.isHashed(@password)
 
-    @db = new BacklogDB backlog_file, =>
+    @db = new BacklogDB this, =>
       @startServer(@port)
+      callback(this) if callback
 
       @db.selectConnections (conns) =>
         @addConnection connInfo for connInfo in conns
 
+  daemonize: ->
+    logfile = Path.join(Config.getDataDirectory(), 'tapchat.log')
+    pidfile = Path.join(Config.getDataDirectory(), 'tapchat.pid')
+
+    @pid = Daemon.daemonize(logfile, pidfile)
+    console.log('Daemon started successfully with pid: ' + pid);
+
   startServer: (port) ->
-    @app = Express.createServer(Express.logger())
+    #@app = Express.createServer(Express.logger())
+    @app = Express.createServer
+      key:  Fs.readFileSync(Config.getCertFile())
+      cert: Fs.readFileSync(Config.getCertFile())
 
     @app.use(Express.static(__dirname + '/../../web'));
 
@@ -53,7 +64,7 @@ class Engine
 
     @app.listen(port)
 
-    console.log "Listening on port #{port}"
+    console.log "\nTapChat ready at https://localhost:#{port}\n"
 
   addClient: (client) ->
     client.sendQueue = new WorkingQueue(1)
@@ -82,7 +93,7 @@ class Engine
 
   send: (client, message, cb) ->
     message = @prepareMessage(message)
-    console.log 'CLIENT SEND:', JSON.stringify(message)
+    #console.log 'CLIENT SEND:', JSON.stringify(message)
     client.sendQueue.perform (over) =>
       client.send JSON.stringify(message),
         cb() if cb
@@ -117,6 +128,7 @@ class Engine
   broadcast: (message, cb) ->
     queue = new WorkingQueue(@clients.length)
 
+    #console.log 'BROADCAST', JSON.stringify(message)
 
     for client in @clients
       do (client) =>
@@ -149,9 +161,9 @@ class Engine
     queue.doneAddingJobs()
 
   messageHandlers:
-    # FIXME 
+    # FIXME
     # heartbeat: (client, messaage, callback) ->
-    
+
     say: (client, message, callback) ->
       conn = @findConnection(message.cid)
       to   = message.to

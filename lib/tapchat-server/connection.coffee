@@ -491,7 +491,7 @@ class Connection extends EventEmitter
         over
 
     raw: (message, over) ->
-      console.log "RAW: #{@getName()} #{JSON.stringify(message)}"
+      #console.log "RAW: #{@getName()} #{JSON.stringify(message)}"
       over()
 
     error: (error, over) ->

@@ -4,17 +4,20 @@ Squel   = require 'squel'
 Sqlite3 = require('sqlite3').verbose()
 _       = require('underscore')
 
+Config = require './config'
+
 CoffeeScript = require 'coffee-script'
 {starts, ends, compact, count, merge, extend, flatten, del, last} = CoffeeScript.helpers
 
 class BacklogDB
-  constructor: (file, callback) ->
-    @file = file
+  constructor: (engine, callback) ->
+    @file = Path.join(Config.getDataDirectory(), 'backlog.db')
+
     @db = new Sqlite3.Database @file, =>
       @createTables callback
 
   createTables: (callback) =>
-    # FIXME: Add some sort of migrations system in here  
+    # FIXME: Add some sort of migrations system in here
     statements = [
       """
       CREATE TABLE IF NOT EXISTS connections (
@@ -46,7 +49,7 @@ class BacklogDB
       """
       """
       CREATE TABLE IF NOT EXISTS events (
-          eid        INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT, 
+          eid        INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
           bid        INTEGER  NOT NULL,
           data       TEXT     NOT NULL,
           created_at DATETIME DEFAULT (strftime('%s','now'))

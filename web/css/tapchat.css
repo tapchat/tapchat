@@ -116,7 +116,7 @@ body {
   right: 0 !important;
 }
 
-#app.not-buffer #members-btn {
+#app.not-buffer #members-btn, #app.not-buffer #join-btn {
   /*display: none !important;*/
   visibility: hidden !important;
 }

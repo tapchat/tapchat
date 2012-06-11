@@ -1,13 +1,19 @@
 #!/usr/bin/env coffee
 
-path = require 'path'
-fs   = require 'fs'
+Path    = require 'path'
+Fs      = require 'fs'
+Program = require 'commander'
 
-lib = path.join(path.dirname(fs.realpathSync(__filename)), '..', 'lib')
+lib = Path.join(Path.dirname(Fs.realpathSync(__filename)), '..', 'lib', 'tapchat-server')
 
-Engine = require path.join(lib, 'tapchat-server', 'engine')
+Config = require Path.join(lib, 'config')
+Engine = require Path.join(lib, 'engine')
 
-# FIXME: Pick a better default here
-BACKLOG_FILE = '/tmp/backlog.db'
+Program
+  .version('0.0.1')
+  .option('-f, --foreground', 'Run in foreground')
+  .parse(process.argv)
 
-@engine = new Engine BACKLOG_FILE
+Config.load (config) =>
+  @engine = new Engine config, (engine) =>
+    engine.daemonize() unless Program.foreground
