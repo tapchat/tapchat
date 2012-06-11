@@ -80,7 +80,11 @@ class Engine
           msg:    merge(reply, success: true)
 
       if handler = @messageHandlers[message._method]
-        handler.apply(this, [ client, message, callback ]) 
+        try
+          handler.apply(this, [ client, message, callback ])
+        catch error
+          console.log "Error handling message", error, event
+          client.close()
       else
         console.log "No handler for #{message._method}"
 
