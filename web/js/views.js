@@ -310,6 +310,7 @@ var BufferView = Backbone.View.extend({
   pageChanged: function (page) {
     if (this === page) {
       this.scrollToBottom();
+      this.$('.entry input').focus();
     }
   },
 
