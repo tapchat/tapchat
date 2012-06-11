@@ -2,6 +2,7 @@ Path    = require 'path'
 Fs      = require 'fs'
 Squel   = require 'squel'
 Sqlite3 = require('sqlite3').verbose()
+_       = require('underscore')
 
 CoffeeScript = require 'coffee-script'
 {starts, ends, compact, count, merge, extend, flatten, del, last} = CoffeeScript.helpers
@@ -87,6 +88,10 @@ class BacklogDB
         callback(rows)
 
   insertConnection: (options, callback) ->
+    throw 'hostname is required' if _.isEmpty(options.hostname)
+    throw 'port is required'     unless parseInt(options.port) > 0
+    throw 'nickname is required' if _.isEmpty(options.nickname)
+    throw 'realname is required' if _.isEmpty(options.realname)
     self = this
     @db.run """
       INSERT INTO connections (name, server, port, is_ssl, nick, user_name, real_name)
@@ -98,7 +103,7 @@ class BacklogDB
       $nick:      options.nickname
       $user_name: options.nickname # FIXME
       $real_name: options.realname
-      $is_ssl:    options.ssl,
+      $is_ssl:    options.ssl || false,
       (err) ->
         throw err if err
         self.selectConnection @lastID, (row) ->
@@ -108,6 +113,7 @@ class BacklogDB
     self = this
 
     sql = Squel.update().table('connections')
+    sql.where('cid = $cid')
 
     setAttribute = (name, value) =>
       sql.set name, value if value
@@ -120,10 +126,12 @@ class BacklogDB
     setAttribute 'real_name', options.realname
     setAttribute 'is_ssl',    options.ssl
 
-    @db.run sql.toString(), (err) ->
-      throw err if err
-      self.selectConnection cid, (row) ->
-        callback(row)
+    @db.run sql.toString(),
+      $cid: cid,
+      (err) ->
+        throw err if err
+        self.selectConnection cid, (row) ->
+          callback(row)
 
   deleteConnection: (cid, callback) ->
     @db.run "DELETE FROM connections WHERE cid = $cid", $cid: cid, (err) ->
