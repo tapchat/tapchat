@@ -91,6 +91,10 @@ var AppView = Backbone.View.extend({
     new EditNetworkDialog().show();
   },
 
+  showJoinChannelDialog: function () {
+    new JoinChannelDialog().show();
+  },
+
   showLoginDialog: function () {
     var content = ich.LoginDialog();
     var dialog = bootbox.dialog(content, {
@@ -110,35 +114,6 @@ var AppView = Backbone.View.extend({
     });
 
     dialog.find("input[type=password]").focus();
-  },
-
-  showJoinChannelDialog: function () {
-    var content = ich.JoinChannelDialog({
-      networks: app.networkList.models.map(function (m) {
-        return m.attributes;
-      })
-    });
-    var dialog = bootbox.dialog(content,
-      [
-        {
-          "label": "Join",
-          "class": "btn-primary",
-          "callback": function () {
-
-          }
-        },
-        {
-          "label": "Cancel",
-          "class": "btn"
-        }
-      ],
-      {
-        "header": "Join Channel",
-        "animate": false,
-        "backdrop": "static"
-      }
-    );
-    dialog.find('input#channel').focus();
   }
 });
 
@@ -203,7 +178,7 @@ var BufferListRowView = Backbone.View.extend({
     this.model.bind('hidden', this.hide, this);
     this.model.bind('destroy', this.remove, this);
 
-    app.View.on('page-changed', this.pageChanged, this);
+    app.view.on('page-changed', this.pageChanged, this);
 
     if (this.model.get('hidden')) {
       $(this.el).addClass('archived');
@@ -571,5 +546,48 @@ var EditNetworkDialog = Backbone.View.extend({
 
     console.log('form', data);
     app.send(data);
+  }
+});
+
+var JoinChannelDialog = Backbone.View.extend({
+  render: function () {
+    $(this.el).empty();
+    $(this.el).append(ich.JoinChannelDialog({
+      networks: app.networkList.models.map(function (m) {
+        return m.attributes;
+      })
+    }));
+    return this;
+  },
+
+  show: function () {
+    var self = this;
+    this.dialog = bootbox.dialog(this.render().el,
+      [
+        {
+          "label": "Join",
+          "class": "btn-primary",
+          callback: function () { return self.onSubmit(); }
+        },
+        {
+          "label": "Cancel",
+          "class": "btn"
+        }
+      ],
+      {
+        "header": "Join Channel",
+        "animate": false,
+        "backdrop": "static"
+      }
+    );
+    this.dialog.find('input[name=channel]').focus();
+  },
+
+  onSubmit: function() {
+    var networkId = $(this.dialog).find('select[name=network]').val();
+    var channel   = $(this.dialog).find('input[name=channel]').val();
+
+    var network = app.networkList.get(networkId);
+    network.join(channel);
   }
 });

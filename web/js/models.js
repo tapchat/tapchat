@@ -165,6 +165,14 @@ var Network = Backbone.Model.extend({
     });
   },
 
+  join: function (channel) {
+    app.send({
+      _method: 'join',
+      cid:     this.id,
+      channel: channel
+    });
+  },
+
   getConsoleBuffer: function () {
     return this.bufferList.find(function (buffer) {
       return (buffer instanceof ConsoleBuffer);

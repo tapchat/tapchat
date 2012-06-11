@@ -104,7 +104,7 @@
             <div class="control-group">
               <label class="control-label">Network</label>
               <div class="controls">
-                <select>
+                <select name='network'>
                   {{#networks}}
                     <option value="{{id}}">{{name}}</option>
                   {{/networks}}
@@ -114,7 +114,7 @@
             <div class="control-group">
               <label class="control-label">Channel</label>
               <div class="controls">
-                <input type="text" id="channel" placeholder="#channel" />
+                <input type="text" name='channel' class="channel" placeholder="#channel" />
               </div>
             </div>
           </fieldset>
@@ -165,6 +165,7 @@
         </div>
 
         <div id="right">
+          <button id="join-btn" class="btn"><i class="icon-plus"></i><span> Join Channel</span></button>
           <button id="members-btn" class="btn" data-toggle="button"><i class="icon-user"></i></button>
           <button id="settings-btn" class="btn"><i class="icon-cog"></i></button>
         </div>

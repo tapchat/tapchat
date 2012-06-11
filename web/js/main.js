@@ -38,6 +38,10 @@ $(function () {
     }
   });
 
+  $('#join-btn').tappable(function () {
+    new JoinChannelDialog().show();
+  });
+
   $('#members-btn').tappable(function () {
     $('#sidebar').toggleClass('show');
   });
