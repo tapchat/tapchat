@@ -1,10 +1,10 @@
 function App () {
   this.controller = new Router();
   this.networkList = new NetworkList();
-  Util.bindMessageHandlers(this);
+  // Util.bindMessageHandlers(this);
 }
 
-App.prototype = {
+_.extend(App.prototype, Backbone.Events, {
   _reqid: 0,
 
   connect: function (password) {
@@ -35,7 +35,7 @@ App.prototype = {
 
     this.socket.onerror = function() {
       console.info("Websocket error:", arguments);
-    }
+    };
   },
 
   processMessage: function (message) {
@@ -73,37 +73,57 @@ App.prototype = {
     this._reqid ++;
   },
 
+  sendHeartbeat: function() {
+    // FIXME: Implement
+  },
+
+  setConnectionState: function(newState) {
+    this.connectionState = newState;
+    this.trigger('connection-state-changed', newState);
+  },
+
   messageHandlers: {
-    header: function (message) {
-      this.timeOffset   = new Date().getTime() - message.time;
-      this.maxIdle      = message.idle_interval;
-      // this.idleInterval = setInterval(_.bind(this.idleReconnect, this), this.maxIdle)
-    },
-
-    stat_user: function (message) {
-      if (!this.user)
-        this.user = new User(message);
-      else
-        this.user.set(message);
-    },
-
     makeserver: function (message) {
       message.id = message.nid;
-      this.networkList.add(message);
+
+      var network = this.networkList.get(message.nid);
+      if (network) {
+        network.reload(message);
+      } else {
+        this.networkList.add(message);
+      }
+    },
+
+    connection_deleted: function (message) {
+      var network = this.networkList.get(message.nid);
+      this.networkList.remove(network);
+    },
+
+    header: function (message) {
+      this.setConnectionState('loading');
     },
 
     backlog_complete: function (message) {
-      // FIXME: Do anything here?
+      this.setConnectionState('loaded');
+      this.sendHeartbeat();
     },
 
     heartbeat_echo: function (message) {
-      // FIXME: Need to implement this
-      console.warn('Ignoring heartbeat echo');
-      console.warn(message);
+      _.each(message.seenEids, function (buffers, cid) {
+        var network = this.networkList.get(cid);
+        if (network) {
+          _.each(buffers, function (bufferEid, bid) {
+            var buffer = network.bufferList.get(bid);
+            if (buffer) {
+              buffer.markRead(bufferEid);
+            }
+          });
+        }
+      });
     },
 
     idle: function (message) {
-      /* ignore, lastMessageTime will still be updated above. */
-    },
+      // Ignored
+    }
   }
-};
+});

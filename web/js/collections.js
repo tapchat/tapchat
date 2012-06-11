@@ -8,8 +8,8 @@ var BufferList = Backbone.Collection.extend({
 
 var MemberList = Backbone.Collection.extend({
   model: Member,
-  
-  findByNick: function (nick) { 
+
+  findByNick: function (nick) {
     return this.find(function (member) {
       return member.get('nick') == nick;
     });

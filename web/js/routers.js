@@ -3,7 +3,7 @@ var Router = Backbone.Router.extend({
     '':                     'index',
     'settings':             'settings',
     ':networkId':           'network',
-    ':networkId/:bufferId': 'buffer',
+    ':networkId/:bufferId': 'buffer'
   },
 
   index: function () {
@@ -15,36 +15,33 @@ var Router = Backbone.Router.extend({
   },
 
   network: function (networkId) {
-    var network = app.networkList.get(networkId);
-
-    this.networkId = networkId;
-    this.bufferId  = null;
-
-    if (network) {
-      var consoleBufferId = network.bufferList.find(function (buffer) {
-        return buffer.get('name') == '*';
-      });
-      this.buffer(networkId, consoleBufferId);
-    }
+    this.buffer(networkId, null);
   },
 
   buffer: function (networkId, bufferId) {
-    if (networkId < 0 || bufferId < 0) {
-      app.view.showPage(null);
-      return;
-    }
-
     this.networkId = networkId;
     this.bufferId  = bufferId;
 
     var network = app.networkList.get(networkId);
-    if (network) {
-      var buffer = network.bufferList.get(bufferId);
-      if (buffer) {
-        app.view.showPage(buffer.view);
-      } else {
-        app.view.showPage(null);
-      }
+    if (!network) {
+      app.view.showPage(null);
+      return;
+    }
+
+    if (!bufferId) {
+      this.bufferId = network.getConsoleBuffer().id;
+    }
+
+    if (this.networkId <= 0 || this.bufferId <= 0) {
+      app.view.showPage(null);
+      return;
+    }
+
+    var buffer = network.bufferList.get(this.bufferId);
+    if (buffer) {
+      app.view.showPage(buffer.view);
+    } else {
+      app.view.showPage(null);
     }
   }
 });

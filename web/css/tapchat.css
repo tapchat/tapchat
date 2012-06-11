@@ -7,6 +7,15 @@ body {
   position: absolute;
 }
 
+.fake-submit {
+  position: absolute;
+  border: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
 .tappable {
   cursor: pointer;
   -webkit-tap-highlight-color: rgba(0,0,0,0);
@@ -29,12 +38,12 @@ body {
   -ms-user-select: none;
   user-select: none;
 
-  box-sizing: border-box;
   -o-box-sizing: border-box;
   -icab-box-sizing: border-box;
   -khtml-box-sizing: border-box;
   -moz-box-sizing: border-box;
   -webkit-box-sizing: border-box;
+  box-sizing: border-box;
 
   background-size: 1px 44px;
   height: 44px;
@@ -47,7 +56,7 @@ body {
   border-bottom: 1px solid #bbb;
 }
 
-#nav > div {
+#nav #left, #nav #right {
   white-space: nowrap;
   padding: 0 10px;
   display: table-cell;
@@ -72,18 +81,18 @@ body {
 #pages {
   position: absolute;
   top: 44px;
-  bottom: 0px;
-  left: 0px;
+  bottom: 0;
+  left: 0;
   right: 160px;
 }
 
 .page {
   display: none;
   position: absolute;
-  top: 0px;
-  left: 0px;
-  bottom: 0px;
-  right: 0px;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
 }
 
 .page.active {
@@ -92,7 +101,7 @@ body {
 
 #sidebar {
   position: absolute;
-  right: 0px;
+  right: 0;
   width: 160px;
   height: 100%;
   border-left: 1px solid #BBB;
@@ -104,7 +113,7 @@ body {
 }
 
 #app.not-buffer #pages {
-  right: 0px !important;
+  right: 0 !important;
 }
 
 #app.not-buffer #members-btn {
@@ -119,12 +128,12 @@ body {
 #networks, #users {
   height: 50%;
 
-  box-sizing: border-box;
   -o-box-sizing: border-box;
   -icab-box-sizing: border-box;
   -khtml-box-sizing: border-box;
   -moz-box-sizing: border-box;
   -webkit-box-sizing: border-box;
+  box-sizing: border-box;
 
   -moz-user-select: none;
   -webkit-user-select: none;
@@ -145,7 +154,7 @@ body {
 }
 
 #networks li a.networkInfo {
-  disply: block;
+  display: block;
   border-bottom: 1px solid #bbb;
   background: #EEE;
 }
@@ -292,26 +301,31 @@ body {
 .buffer .event span {
   display: table-cell;
 }
-.buffer .event span.who {
+.buffer .event .who {
   font-weight: bold;
   width: 110px;
   text-align: right;
   padding-right: 8px;
 }
-.buffer .event span.message {
+.buffer .event .message {
   font-size: 11pt;
   font-family: sans-serif;
   color: #111;
 }
-.buffer .event span.header {
+.buffer .event .header {
   padding-left: 118px;
   display: block;
 }
-.buffer .event span.channel {
+.buffer .event .channel {
   display: none;
 }
-.buffer .event span.when {
+.buffer .event .when {
   display: none;
+}
+
+.buffer .event_server_motd .message {
+  white-space: pre;
+  font-family: monospace;
 }
 
 @media only screen and (max-width: 640px) {
@@ -370,3 +384,60 @@ body {
  #page-settings #settings-networks {
   padding: 0 10px 10px 10px;
  }
+
+ #page-settings #networks-list {
+  padding: 1em 0 0 0;
+  margin: 0;
+}
+
+#page-settings #networks-list li {
+  background: #eee;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+@media only screen and (min-width: 640px) {
+  #page-settings #networks-list li {
+    display: -webkit-box;
+    -webkit-box-orient: horizontal;
+    -webkit-box-align: center;
+
+    display: -moz-box;
+    -moz-box-orient: horizontal;
+    -moz-box-align: center;
+
+    display: box;
+    box-orient: horizontal;
+    box-align: center;
+  }
+}
+
+#page-settings #networks-list li .network-info {
+  -webkit-box-flex: 1;
+  -moz-box-flex: 1;
+  box-flex: 1;
+}
+
+#page-settings #networks-list li .network-actions {
+}
+
+#page-settings #networks-list li .network-name {
+  font-weight: bold;
+  margin-bottom: 0.5em;
+}
+
+
+input.error, select.error, textarea.error {
+  color: #b94a48;
+  border-color: #b94a48;
+}
+
+input.error:focus, select.error:focus, textarea.error:focus {
+  border-color: #953b39;
+  -webkit-box-shadow: 0 0 6px #d59392;
+     -moz-box-shadow: 0 0 6px #d59392;
+          box-shadow: 0 0 6px #d59392;
+}
+

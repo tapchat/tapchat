@@ -42,7 +42,7 @@
     </script>
 
     <script type="text/html" id="buffer_event">
-      <div class="event">
+      <div class="event event_{{type}}">
         <span class="when">{{datetime.hours}}:{{datetime.minutes}}:{{datetime.seconds}}</span>
         <span class="who">{{from}}</span>
         <span class="message">{{msg}}</span>
@@ -71,26 +71,26 @@
       </div>
     </script>
 
-    <script type="text/html" id="AddServerDialog">
+    <script type="text/html" id="AddNetworkDialog">
       <div id="add-server">
         <form class="form-horizontal">
           <fieldset>
             <div class="control-group">
               <label class="control-label">Connection</label>
               <div class="controls">
-                <input type="text" class="input-medium" placeholder="irc.example.com">
-                <input type="text" class="input-mini" placeholder="6667">
+                <input type="text" class="input-medium" name="hostname" placeholder="irc.example.com">
+                <input type="text" class="input-mini" name="port" placeholder="6667">
                 <label class="checkbox">
-                  <input type="checkbox"> Secure Conncetion (SSL)
+                  <input type="checkbox" name="ssl"> Secure Conncetion (SSL)
                 </label>
               </div>
             </div>
             <div class="control-group">
               <label class="control-label">Identity</label>
               <div class="controls">
-                <input type="text" class="input-medium" placeholder="Nickname" />
+                <input type="text" class="input-medium nickname" name="nickname" placeholder="Nickname" />
                 <br>
-                <input type="text" class="input-medium" placeholder="Real Name" />
+                <input type="text" class="input-medium real-name" name="realname" placeholder="Real Name" />
               </div>
             </fieldset>
         </form>
@@ -128,7 +128,24 @@
       </ul>
       <div class="tab-pane active" id="settings-networks">
         <button id="add-network-btn" class="btn">Add IRC Network</button>
+        <ul id="networks-list"></ul>
       </div>
+    </script>
+
+    <script type="text/html" id="SettingsNetworkView">
+      <div class="network-info">
+        <span class="network-name">{{name}}</span>
+        <span class="network-state">{{state}}</span>
+      </div>
+      <div class="network-actions">
+        {{#isDisconnected}}
+        <button class="btn btn-connect">Connect</button>
+        {{/isDisconnected}}
+        {{#isConnected}}
+        <button class="btn btn-disconnect">Disconnect</button>
+        {{/isConnected}}
+        <button class="btn btn-edit">Edit</button>
+        <button class="btn btn-danger btn-remove">Remove</button>
     </script>
 
   </head>
@@ -147,7 +164,7 @@
           </ul>
         </div>
 
-        <div>
+        <div id="right">
           <button id="members-btn" class="btn" data-toggle="button"><i class="icon-user"></i></button>
           <button id="settings-btn" class="btn"><i class="icon-cog"></i></button>
         </div>

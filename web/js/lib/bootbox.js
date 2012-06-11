@@ -470,11 +470,12 @@ var bootbox = window.bootbox || (function() {
                 cb        = callbacks[handler],
                 hideModal = null;
 
+            e.preventDefault();
+
             if (typeof cb == 'function') {
                 hideModal = cb();
             }
             if (hideModal !== false){
-                e.preventDefault();
                 hideSource = 'button';
                 div.modal("hide");
             }
@@ -489,6 +490,13 @@ var bootbox = window.bootbox || (function() {
         div.modal({
             "backdrop" : options.backdrop || true,
             "keyboard" : options.keyboard
+        });
+
+        var form = div.find('form');
+        form.append($('<input>').attr('type', 'submit').addClass('fake-submit'));
+        form.submit(function (e) {
+            e.preventDefault();
+            div.find(".btn-primary").click();
         });
 
         return div;

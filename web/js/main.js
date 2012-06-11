@@ -29,12 +29,10 @@ $(function () {
 
   $('#settings-btn').tappable(function () {
     var currentPath = window.location.hash.substring(1);
-    console.log('got current path', currentPath);
     if (currentPath !== 'settings') {
       this.beforeSettings = currentPath;
       app.controller.navigate('settings', { trigger: true });
     } else {
-      console.log('GOING BACK!!!', this.beforeSettings);
       app.controller.navigate(this.beforeSettings, { trigger: true });
       this.beforeSettings = null;
     }

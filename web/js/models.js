@@ -23,57 +23,30 @@ var Buffer = Backbone.Model.extend({
     }
   },
 
-  messageHandlers: {
-    buffer_init: function () {
-      // FIXME:
-      if (!this.network.isBacklog) {
-        console.info('activate?! ' + this.get('name') );
-        this.trigger('activate');
-      }
+  markRead: function(eid) {
+    // FIXME: Implement this.
+    console.log('Mark read ' + eid);
+  },
+
+  messageHandlers: {},
+
+  nonBacklogMessageHandlers: {
+    buffer_hidden: function (message) {
+      this.set('hidden', true);
+    },
+    buffer_unhidden: function (message) {
+      this.set('hidden', false);
     }
   }
 });
 
-var ChatBuffer = Buffer.extend({
-  messageHandlers: _.extend(Buffer.prototype.messageHandlers, {
-    buffer_hidden: function (message) {
-    }
-  }),
-});
-
-var ChannelBuffer = ChatBuffer.extend({
+var ChannelBuffer = Buffer.extend({
   initialize: function () {
-    ChatBuffer.prototype.initialize.call(this);
+    Buffer.prototype.initialize.call(this);
     this.memberList = new MemberList();
   },
 
-  messageHandlers: _.extend(ChatBuffer.prototype.messageHandlers, {
-    joined_channel: function (message) {
-      if (!this.network.isBacklog)
-        this.memberList.add(message);
-    },
-
-    parted_channel: function (message) {
-      if (!this.network.isBacklog) {
-        var member = this.memberList.findByNick(message.nick);
-        this.memberList.remove(member);
-      }
-    },
-
-    quit: function (message) {
-      if (!this.network.isBacklog) {
-        var member = this.memberList.findByNick(message.nick);
-        this.memberList.remove(member);
-      }
-    },
-
-    nickchange: function (message) {
-      if (!this.network.isBacklog) {
-        var member = this.memberList.findByNick(message.nick);
-        member.set({ nick: message.newnick });
-      }
-    },
-
+  messageHandlers: _.extend(Buffer.prototype.messageHandlers, {
     channel_init: function (message) {
       this.set(message.topic);
 
@@ -85,27 +58,67 @@ var ChannelBuffer = ChatBuffer.extend({
           this.memberList.add(member);
         }
       }, this));
-    },
+    }
+  }),
 
-    user_channel_mode: function (message) {
-      if (!this.network.isBacklog) {
-        var member = this.memberList.findByNick(message.nick);
-        member.updateMode(message);
-      }
-    },
-
+  nonBacklogMessageHandlers: _.extend(Buffer.prototype.nonBacklogMessageHandlers, {
     channel_topic: function (message) {
       this.set('topic_text', message.topic);
       this.set('topic_by', message.author);
+    },
+
+    user_channel_mode: function (message) {
+      var member = this.memberList.findByNick(message.nick);
+      member.updateMode(message);
+    },
+
+    joined_channel: function (message) {
+      this.memberList.add(message);
+    },
+
+    parted_channel: function (message) {
+      var member = this.memberList.findByNick(message.nick);
+      this.memberList.remove(member);
+    },
+
+    quit: function (message) {
+      var member = this.memberList.findByNick(message.nick);
+      this.memberList.remove(member);
+    },
+
+    kicked_channel: function (message) {
+      var member = this.memberList.findByNick(message.nick);
+      this.memberList.remove(member);
+    },
+
+    you_joined_channel: function (message) {
+      this.set('joined', true);
+    },
+
+    you_parted_channel: function (message) {
+      this.set('joined', false);
+    },
+
+    nickchange: function (message) {
+      this.updateMemberNick(message);
+    },
+
+    you_nickchange: function (message) {
+      this.updateMemberNick(message);
     }
   }),
+
+  updateMemberNick: function (message) {
+    var member = this.memberList.findByNick(message.oldnick);
+    member.set({ nick: message.newnick });
+  }
 });
 
-var ConversationBuffer = ChatBuffer.extend({
+var ConversationBuffer = Buffer.extend({
   initialize: function () {
-    ChatBuffer.prototype.initialize.call(this);
+    Buffer.prototype.initialize.call(this);
   },
-  messageHandlers: _.extend(ChatBuffer.prototype.messageHandlers, {
+  messageHandlers: _.extend(Buffer.prototype.messageHandlers, {
     whois_response: function (message) {
       if (!this.network.isBacklog) {
         console.info('FIXME');
@@ -118,30 +131,35 @@ var ConversationBuffer = ChatBuffer.extend({
 var ConsoleBuffer = Buffer.extend({
   initialize: function () {
     Buffer.prototype.initialize.call(this);
-  },
-
-  messageHandlers: _.extend(Buffer.prototype.messageHandlers, {
-    connecting: function (message) {
-    },
-    connected: function (message) {
-    },
-    connecting_finished: function (message) {
-    },
-    joining: function (message) {
-    },
-    user_mode: function (message) {
-    },
-    myinfo: function (message) {
-      // FIXME: Do anything with this?
-      this.network.myinfo = message;
-    }
-  })
+  }
 });
 
 var Network = Backbone.Model.extend({
-  initialize: function () {
-    this.isBacklog = true;
+  initialize: function (attributes) {
+    this.isBacklog  = (app.connectionState !== 'loaded');
     this.bufferList = new BufferList();
+    this.update(attributes);
+  },
+
+  reconnect: function () {
+    app.send({
+      _method: 'reconnect',
+      cid:     this.id
+    });
+  },
+
+  disconnect: function () {
+    app.send({
+      _method: 'disconnect',
+      cid:     this.id
+    });
+  },
+
+  deleteConnection: function () {
+    app.send({
+      _method: 'delete-connection',
+      cid:     this.id
+    });
   },
 
   getConsoleBuffer: function () {
@@ -152,8 +170,13 @@ var Network = Backbone.Model.extend({
 
   processMessage: function (message) {
     var type = message.type;
+
     if (this.messageHandlers[type]) {
       this.messageHandlers[message.type].apply(this, [ message ]);
+    }
+
+    if (!message.is_backlog && !this.isBacklog && this.nonBacklogMessageHandlers[type]) {
+      this.nonBacklogMessageHandlers[type].apply(this, [ message ]);
     }
 
     if (message.bid) {
@@ -164,17 +187,35 @@ var Network = Backbone.Model.extend({
     }
   },
 
+  reload: function (message) {
+    this.update(message);
+  },
+
+  update: function (message) {
+    console.log('update!', message);
+    if (this.get('disconnected')) {
+      this.set('state', 'disconnected');
+    } else {
+      this.set('state', 'connected');
+    }
+  },
+
   messageHandlers: {
     makebuffer: function (message) {
-      var buffer = null;
-
       message.id = message.bid;
+
+      var buffer = this.bufferList.get(message.bid);
+      if (buffer) {
+        buffer.reload(message);
+        return;
+      }
+
       switch (message.buffer_type) {
         case 'channel':
           buffer = new ChannelBuffer(message);
           break;
         case 'conversation':
-          buffer = new ConversationBuffer(message)
+          buffer = new ConversationBuffer(message);
           break;
         case 'console':
           buffer = new ConsoleBuffer(message);
@@ -185,17 +226,63 @@ var Network = Backbone.Model.extend({
 
       buffer.network = this;
       this.bufferList.add(buffer);
-
-      var nid = buffer.get('nid');
-      var bid = buffer.get('bid');
-      var isConsole = buffer instanceof ConsoleBuffer;
-      if (nid == app.controller.networkId && ((bid == app.controller.bufferId) || (isConsole && app.controller.bufferId == null))) {
-        app.controller.buffer(buffer.get('nid'), buffer.get('id'));
-      }
     },
 
     end_of_backlog: function (message) {
       this.isBacklog = false;
+    }
+  },
+
+  nonBacklogMessageHandlers: {
+    server_details_changed: function (message) {
+      this.update(message);
+    },
+
+    myinfo: function (message) {
+      // FIXME: Do anything with this?
+      this.network.myinfo = message;
+    },
+
+    you_nickchange: function (message) {
+      this.set('nick', message.newnick);
+    },
+
+    connecting: function (message) {
+      this.set('nick', message.nick);
+      this.set('state', 'connecting');
+    },
+
+    connecting_retry: function (message) {
+      this.set('state', 'retrying');
+    },
+
+    waiting_to_retry: function (message) {
+      this.set('state', 'retrying');
+    },
+
+    connecting_cancelled: function (message) {
+      this.set('state', 'disconnected');
+    },
+
+    connecting_failed: function (message) {
+      this.set('state', 'disconnected');
+    },
+
+    connected: function (message) {
+      // not used
+    },
+
+    connecting_finished: function (message) {
+      this.set('state', 'connected');
+    },
+
+    socket_closed: function (message) {
+      this.set('state', 'disconnected');
+    },
+
+    delete_buffer: function (message) {
+      var buffer = this.bufferList.get(message.bid);
+      this.bufferList.remove(buffer);
     }
   }
 });

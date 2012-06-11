@@ -58,6 +58,13 @@ var AppView = Backbone.View.extend({
       buffer.memberListView = new MemberListView({ model: buffer });
       $('#users').append(buffer.memberListView.render().el);
     }
+
+    var networkMatches = app.controller.networkId == buffer.network.id;
+    var bufferMatches  = app.controller.bufferId  == buffer.id;
+    var isConsole      = (!app.controller.bufferId) && (buffer instanceof ConsoleBuffer);
+    if (networkMatches && (bufferMatches || isConsole)) {
+      app.controller.buffer(app.controller.networkId, app.controller.bufferId);
+    }
   },
 
   removeBuffer: function (buffer) {
@@ -75,7 +82,7 @@ var AppView = Backbone.View.extend({
 
     this.currentPage = pageView;
 
-    if (pageView != null) {
+    if (pageView) {
       $(pageView.el).addClass('active');
       this.setTitle(pageView.getTitle());
     } else {
@@ -84,7 +91,7 @@ var AppView = Backbone.View.extend({
 
     // This is a bit of a special case hack here...
     var isBuffer = (this.currentPage instanceof BufferView);
-    if (this.currentPage == null || isBuffer) {
+    if ((!this.currentPage) || isBuffer) {
       $('#app').removeClass('not-buffer');
     } else {
       $('#app').addClass('not-buffer');
@@ -98,22 +105,8 @@ var AppView = Backbone.View.extend({
     $('#title').html(text);
   },
 
-  showAddServerDialog: function () {
-    var content = ich.AddServerDialog();
-    var dialog = bootbox.dialog(content, [
-      {
-        "label": "Add Network",
-        "class": "btn-primary"
-      },
-      {
-        "label": "Cancel",
-        "class": "btn"
-      }
-    ], {
-        "header": "Add IRC Network",
-        "animate": false,
-        "backdrop": "static"
-    });
+  showAddNetworkDialog: function () {
+    new EditNetworkDialog().show();
   },
 
   showLoginDialog: function () {
@@ -122,8 +115,8 @@ var AppView = Backbone.View.extend({
       "label" : "Login",
       "class" : "btn-primary",
       "callback": function() {
-          var password = dialog.find("input[type=password]").val()
-          if (password.length == 0) {
+          var password = dialog.find("input[type=password]").val();
+          if (password.length === 0) {
             return false;
           }
           app.connect(password);
@@ -132,11 +125,6 @@ var AppView = Backbone.View.extend({
     }, {
       "animate": false,
       "backdrop": "static"
-    });
-
-    dialog.find('form').on('submit', function (e) {
-      e.preventDefault();
-      dialog.find(".btn-primary").click();
     });
 
     dialog.find("input[type=password]").focus();
@@ -189,7 +177,7 @@ var NetworkListRowView = Backbone.View.extend({
   },
 
   pageChanged: function(page) {
-    if (this.model.getConsoleBuffer() === page.model) {
+    if (page && page.model && page.model === this.model.getConsoleBuffer()) {
       $(this.el).addClass('active');
     } else {
       $(this.el).removeClass('active');
@@ -240,13 +228,13 @@ var BufferListRowView = Backbone.View.extend({
 
     app.view.on('page-changed', this.pageChanged);
 
-    if (this.model.get('hidden') == true) {
+    if (this.model.get('hidden')) {
       $(this.el).addClass('archived');
     }
   },
 
   pageChanged: function(page) {
-    if (this.model === page.model) {
+    if (page && page.model === this.model) {
       $(this.el).addClass('active');
     } else {
       $(this.el).removeClass('active');
@@ -297,7 +285,7 @@ var MemberListView = Backbone.View.extend({
   },
 
   pageChanged: function(page) {
-    if (page.model === this.model) {
+    if (page && page.model === this.model) {
       $(this.el).addClass('active');
     } else {
       $(this.el).removeClass('active');
@@ -374,6 +362,7 @@ var BufferView = Backbone.View.extend({
     } else {
       $(this.el).find('.topic_text').html('');
     }
+    return this;
   },
 
   pageChanged: function (page) {
@@ -396,13 +385,14 @@ var BufferView = Backbone.View.extend({
       var rendered = ich.buffer_event({
         datetime: Util.explodeDateTime(new Date(event.time*1000)),
         from:     event.nick || event.from,
-        msg:      text
+        msg:      text,
+        type:     event.type
       });
       $(rendered).find('a').linkify({
         handleLinks: function (links) {
           return links.prop('target', '_new');
         }
-      })
+      });
       $(this.el).find('.events').append(rendered);
 
       this.scrollToBottom();
@@ -410,12 +400,11 @@ var BufferView = Backbone.View.extend({
   },
 
   scrollToBottom: function () {
-    console.log('scroll to: ' + this.$('.events')[0].scrollHeight);
     this.$('.events').scrollTop(this.$('.events')[0].scrollHeight);
   },
 
   sendMessage: function (text) {
-    if (text == "") return;
+    if (text === "") return;
     var buffer = this.model;
     var msg = {
           cid: buffer.network.get('nid'),
@@ -447,14 +436,33 @@ var SettingsView = Backbone.View.extend({
   id: 'page-settings',
   className: 'page',
 
-  initialize: function (options) {
-    _.bindAll(this, 'pageChanged');
-    app.view.on('page-changed', this.pageChanged);
+  networkViews: {},
 
+  initialize: function (options) {
     $(this.el).append(ich.Settings);
+
+    _.bindAll(this, 'pageChanged', 'addNetwork', 'removeNetwork');
+    app.view.on('page-changed', this.pageChanged);
+    app.networkList.bind('add', this.addNetwork);
+    app.networkList.bind('remove', this.removeNetwork);
+
     this.$('#add-network-btn').click(function () {
-      app.view.showAddServerDialog();
+      app.view.showAddNetworkDialog();
     });
+  },
+
+  addNetwork: function (network) {
+    var networkView = new SettingsNetworkView({
+      model: network
+    });
+    this.networkViews[network.id] = networkView;
+    $('#networks-list').append(networkView.render().el);
+  },
+
+  removeNetwork: function (network) {
+    var networkView = this.networkViews[network.id];
+    delete this.networkViews[network.id];
+    networkView.remove();
   },
 
   pageChanged: function(page) {
@@ -472,3 +480,144 @@ var SettingsView = Backbone.View.extend({
   }
 });
 
+var SettingsNetworkView = Backbone.View.extend({
+  tagName: 'li',
+
+  events: {
+    'click .btn-connect':    'connect',
+    'click .btn-disconnect': 'disconnect',
+    'click .btn-edit':       'openEditDialog',
+    'click .btn-remove':     'deleteConnection'
+  },
+
+  initialize: function (options) {
+    _.bindAll(this, 'render');
+    $(this.el).attr('id', 'network-' + this.model.id);
+    this.model.on('change', this.render);
+  },
+
+  render: function () {
+    var isDisconnected = this.model.get('state') == 'disconnected';
+    $(this.el).empty();
+    $(this.el).append(ich.SettingsNetworkView({
+      name:           this.model.get('name'),
+      state:          this.model.get('state'),
+      isConnected:    !isDisconnected,
+      isDisconnected: isDisconnected
+    }));
+    return this;
+  },
+
+  connect: function () {
+    this.model.reconnect();
+  },
+
+  disconnect: function () {
+    this.model.disconnect();
+  },
+
+  deleteConnection: function () {
+    if (confirm("Are you sure?")) {
+      this.model.deleteConnection();
+    }
+  },
+
+  openEditDialog: function () {
+    new EditNetworkDialog({ model: this.model }).show();
+  }
+});
+
+var EditNetworkDialog = Backbone.View.extend({
+  events: {
+    'change input[name=ssl]': 'sslChanged'
+  },
+
+  render: function () {
+    $(this.el).empty();
+    $(this.el).append(ich.AddNetworkDialog());
+
+    if (this.model) {
+      var self = this;
+      _.each(this.model.attributes, function(val, key) {
+        if (key === 'nick') key = 'nickname'; // Argh
+        $(self.el).find('input[name=' + key + ']').val(val);
+      });
+    }
+
+    return this;
+  },
+
+  show: function () {
+    var self = this;
+    this.dialog = bootbox.dialog(this.render().el,
+      [
+        {
+          "label": this.model ? 'Save Network' : 'Add Network',
+          "class": "btn-primary",
+          callback: function () { return self.onSubmit(); }
+        },
+        {
+          "label": "Cancel",
+          "class": "btn"
+        }
+      ],
+      {
+        header: this.model ? 'Edit IRC Network' : 'Add IRC Network',
+        animate: false,
+        backdrop: "static"
+      }
+    );
+    this.dialog.find('input[name=hostname]').focus();
+  },
+
+  sslChanged: function (e) {
+    var checked = $(e.target).is(':checked');
+    console.log('checked', checked);
+    console.log( $(this.el).find('input[name=port]') );
+    $(this.el).find('input[name=port]').attr('placeholder', checked ? 'port' : '6667');
+  },
+
+  onSubmit: function () {
+    var form = $(this.dialog.find('form'));
+
+    var valid = _.reduce(form.find('input[type=text]'), function (valid, input) {
+      input = $(input);
+
+      // Only require port number if using SSL
+      if (input.attr('name') === 'port') {
+        var isSSL = (form.find('input[name=ssl]').is(':checked'));
+        if (!isSSL) {
+          input.removeClass('error');
+          return valid;
+        }
+      }
+
+      if (_.isEmpty(input.val())) {
+        input.addClass('error');
+        return false;
+      } else {
+        input.removeClass('error');
+        return valid && true;
+      }
+    }, true);
+
+    if (!valid) {
+      return false;
+    }
+
+    var data = form.serializeObject();
+    if (_.isEmpty(data.port)) {
+      data.port = 6667;
+    }
+
+    if (this.model) {
+      data._method = 'edit-server';
+      data.cid = this.model.id;
+    } else {
+      data._method = 'add-server';
+    }
+
+    console.log('form', data);
+    app.send(data);
+  }
+});
