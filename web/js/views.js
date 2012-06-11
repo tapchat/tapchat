@@ -29,24 +29,14 @@ var BUFFER_EVENTS = {
 
 var AppView = Backbone.View.extend({
   initialize: function (options) {
-    _.bindAll(this, 'addNetwork', 'removeNetwork', 'addBuffer', 'removeBuffer');
-    window.app.networkList.bind('add', this.addNetwork);
-    window.app.networkList.bind('remove', this.removeNetwork);
+    window.app.networkList.bind('add', this.addNetwork, this);
   },
 
   addNetwork: function (network) {
     var view = new NetworkListRowView({ model: network });
     $('#networks').append(view.render().el);
 
-    network.bufferList.bind('add',    this.addBuffer);
-    network.bufferList.bind('remove', this.removeBuffer);
-  },
-
-  removeNetwork: function (network) {
-    network.view.remove();
-
-    network.bufferList.unbind('add',    this.addBuffer);
-    network.bufferList.unbind('remove', this.removeBuffer);
+    network.bufferList.bind('add', this.addBuffer, this);
   },
 
   addBuffer: function (buffer) {
@@ -64,14 +54,6 @@ var AppView = Backbone.View.extend({
     var isConsole      = (!app.controller.bufferId) && (buffer instanceof ConsoleBuffer);
     if (networkMatches && (bufferMatches || isConsole)) {
       app.controller.buffer(app.controller.networkId, app.controller.bufferId);
-    }
-  },
-
-  removeBuffer: function (buffer) {
-    buffer.view.remove();
-
-    if (buffer.get('buffer_type') == 'channel') {
-      buffer.memberListView.remove();
     }
   },
 
@@ -164,16 +146,13 @@ var NetworkListRowView = Backbone.View.extend({
   tagName: 'li',
 
   initialize: function () {
-    _.bindAll(this, 'addBuffer', 'removeBuffer', 'render', 'pageChanged');
-    this.model.bind('change', this.render);
-    this.model.view = this;
+    this.model.bind('change', this.render, this);
+    this.model.bind('destroy', this.remove, this);
+    this.model.bufferList.bind('add', this.addBuffer, this);
 
     this.render();
 
-    app.view.on('page-changed', this.pageChanged);
-
-    this.model.bufferList.bind('add', this.addBuffer);
-    this.model.bufferList.bind('remove', this.removeBuffer);
+    app.view.on('page-changed', this.pageChanged, this);
   },
 
   pageChanged: function(page) {
@@ -192,10 +171,6 @@ var NetworkListRowView = Backbone.View.extend({
 
     var bufferListView = new BufferListRowView({ model: buffer });
     this.$('.bufferList').append(bufferListView.render().el);
-  },
-
-  removeBuffer: function (buffer) {
-    buffer.listRowView.remove();
   },
 
   select: function () {
@@ -222,11 +197,13 @@ var BufferListRowView = Backbone.View.extend({
   tagName: 'li',
 
   initialize: function () {
-    _.bindAll(this, 'render', 'hide', 'pageChanged');
-    this.model.bind('change', this.render);
-    this.model.bind('hidden', this.hide);
+    $(this.el).attr('id', 'buffer-' + this.model.id);
 
-    app.view.on('page-changed', this.pageChanged);
+    this.model.bind('change', this.render, this);
+    this.model.bind('hidden', this.hide, this);
+    this.model.bind('destroy', this.remove, this);
+
+    app.View.on('page-changed', this.pageChanged, this);
 
     if (this.model.get('hidden')) {
       $(this.el).addClass('archived');
@@ -276,12 +253,10 @@ var MemberListView = Backbone.View.extend({
     // FIXME: Is it OK to have '#' in ID?
     this.el.id = 'users-' + this.model.get('name');
 
-    _.bindAll(this, 'addMember', 'removeMember', 'pageChanged');
+    app.view.on('page-changed', this.pageChanged, this);
 
-    app.view.on('page-changed', this.pageChanged);
-
-    this.model.memberList.bind('add', this.addMember);
-    this.model.memberList.bind('remove', this.removeMember);
+    this.model.bind('destroy', this.remove, this);
+    this.model.memberList.bind('add', this.addMember, this);
   },
 
   pageChanged: function(page) {
@@ -295,10 +270,6 @@ var MemberListView = Backbone.View.extend({
   addMember: function (member) {
     var view = new MemberListRowView({ model: member });
     $(this.el).append(view.render().el);
-  },
-
-  removeMember: function (member) {
-    member.view.remove();
   }
 });
 
@@ -306,9 +277,8 @@ var MemberListRowView = Backbone.View.extend({
   tagName: 'li',
 
   initialize: function () {
-    _.bindAll(this, 'render');
-    this.model.bind('change', this.render);
-    this.model.view = this;
+    this.model.bind('change', this.render, this);
+    this.model.bind('destroy', this.remove, this);
   },
 
   render: function () {
@@ -325,8 +295,6 @@ var BufferView = Backbone.View.extend({
   className: 'page buffer',
 
   initialize: function () {
-    _.bindAll(this, 'addEvent', 'pageChanged');
-
     $(this.el).append(ich.BufferView());
 
     var self = this;
@@ -338,13 +306,12 @@ var BufferView = Backbone.View.extend({
       }
     });
 
-    app.view.on('page-changed', this.pageChanged);
+    app.view.on('page-changed', this.pageChanged, this);
 
-    // FIXME: Is it OK to have '#' in ID?
-    this.el.id = 'buffer-' + this.model.get('name');
+    this.el.id = 'buffer-' + this.model.get('id');
 
-    this.model.view = this;
-    this.model.bind('event', this.addEvent);
+    this.model.bind('event', this.addEvent, this);
+    this.model.bind('destroy', this.remove, this);
   },
 
   getTitle: function () {
@@ -419,16 +386,12 @@ var BufferView = Backbone.View.extend({
 
 var MainMenuView = Backbone.View.extend({
   initialize: function (options) {
-    _.bindAll(this, 'addNetwork', 'removeNetwork');
-    window.app.networkList.bind('add', this.addNetwork);
-    window.app.networkList.bind('remove', this.removeNetwork);
+    window.app.networkList.bind('add', this.addNetwork, this);
   },
+
   addNetwork: function (network) {
     var view = new NetworkListRowView({ model: network });
     $('#main-menu').prepend(view.render().el);
-  },
-  removeNetwork: function (network) {
-    network.view.remove();
   }
 });
 
@@ -436,15 +399,11 @@ var SettingsView = Backbone.View.extend({
   id: 'page-settings',
   className: 'page',
 
-  networkViews: {},
-
   initialize: function (options) {
     $(this.el).append(ich.Settings);
 
-    _.bindAll(this, 'pageChanged', 'addNetwork', 'removeNetwork');
-    app.view.on('page-changed', this.pageChanged);
-    app.networkList.bind('add', this.addNetwork);
-    app.networkList.bind('remove', this.removeNetwork);
+    app.view.on('page-changed', this.pageChanged, this);
+    app.networkList.bind('add', this.addNetwork, this);
 
     this.$('#add-network-btn').click(function () {
       app.view.showAddNetworkDialog();
@@ -455,14 +414,7 @@ var SettingsView = Backbone.View.extend({
     var networkView = new SettingsNetworkView({
       model: network
     });
-    this.networkViews[network.id] = networkView;
     $('#networks-list').append(networkView.render().el);
-  },
-
-  removeNetwork: function (network) {
-    var networkView = this.networkViews[network.id];
-    delete this.networkViews[network.id];
-    networkView.remove();
   },
 
   pageChanged: function(page) {
@@ -491,9 +443,9 @@ var SettingsNetworkView = Backbone.View.extend({
   },
 
   initialize: function (options) {
-    _.bindAll(this, 'render');
     $(this.el).attr('id', 'network-' + this.model.id);
-    this.model.on('change', this.render);
+    this.model.on('change', this.render, this);
+    this.model.bind('destroy', this.remove, this);
   },
 
   render: function () {

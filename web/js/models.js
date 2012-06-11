@@ -79,16 +79,19 @@ var ChannelBuffer = Buffer.extend({
     parted_channel: function (message) {
       var member = this.memberList.findByNick(message.nick);
       this.memberList.remove(member);
+      member.destroy();
     },
 
     quit: function (message) {
       var member = this.memberList.findByNick(message.nick);
       this.memberList.remove(member);
+      member.destroy();
     },
 
     kicked_channel: function (message) {
       var member = this.memberList.findByNick(message.nick);
       this.memberList.remove(member);
+      member.destroy();
     },
 
     you_joined_channel: function (message) {
@@ -283,6 +286,7 @@ var Network = Backbone.Model.extend({
     delete_buffer: function (message) {
       var buffer = this.bufferList.get(message.bid);
       this.bufferList.remove(buffer);
+      buffer.destroy();
     }
   }
 });

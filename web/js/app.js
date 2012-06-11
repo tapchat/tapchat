@@ -1,3 +1,5 @@
+Backbone.sync = function() {};
+
 function App () {
   this.controller = new Router();
   this.networkList = new NetworkList();
@@ -97,6 +99,7 @@ _.extend(App.prototype, Backbone.Events, {
     connection_deleted: function (message) {
       var network = this.networkList.get(message.nid);
       this.networkList.remove(network);
+      network.destroy();
     },
 
     header: function (message) {
