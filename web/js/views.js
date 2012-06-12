@@ -23,7 +23,7 @@ var BUFFER_EVENTS = {
   "nickchange":            "{{oldnick}} is now known as {{newnick}}",
   "user_channel_mode":     "Mode {{diff}} {{nick}} by {{from}}",
   "channel_url":           "Channel URL: {{url}}",
-  "channel_topic":         "{{nick}} set the topic: {{topic}}",
+  "channel_topic":         "Topic is: {{topic}}",
   "channel_topic_cleared": "{{nick}} cleared the topic",
   "channel_mode":          "Channel mode: {{diff}} by {{from}}"
 };
@@ -301,8 +301,9 @@ var BufferView = Backbone.View.extend({
 
     this.el.id = 'buffer-' + this.model.get('id');
 
-    this.model.bind('event', this.addEvent, this);
-    this.model.bind('destroy', this.remove, this);
+    this.model.bind('change',  this.render,   this);
+    this.model.bind('event',   this.addEvent, this);
+    this.model.bind('destroy', this.remove,   this);
   },
 
   getTitle: function () {

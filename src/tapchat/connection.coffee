@@ -270,6 +270,9 @@ class Connection extends EventEmitter
 
     topic: (channel, topic, nick, message, over) ->
       if buffer = @getBuffer(channel)
+        buffer.topicText = topic
+        buffer.topicBy   = nick
+        buffer.topicTime = null
         buffer.addEvent
           type: 'channel_topic'
           author: nick

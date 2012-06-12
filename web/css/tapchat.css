@@ -220,10 +220,18 @@ body {
   height: 30px;
   background: #EEE;
   border-bottom: 1px solid #BBB;
+
+  display: -webkit-box;
+  -webkit-box-align: center;
+
+  display: -moz-box;
+  -moz-box-align: center;
+
+  display: box;
+  box-align: center;
 }
 
-.topic #topic_text {
-  padding-top: 6px;
+.topic .topic_text {
   padding-left: 6px;
   font-size: 14px;
 }
