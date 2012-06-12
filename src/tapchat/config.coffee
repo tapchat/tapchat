@@ -89,4 +89,10 @@ Config =
   getCertFile: ->
     Path.join(Config.getDataDirectory(), 'tapchat.pem')
 
+  getPidFile: ->
+    Path.join(Config.getDataDirectory(), 'tapchat.pid')
+
+  getLogFile: ->
+    Path.join(Config.getDataDirectory(), 'tapchat.log')
+
 module.exports = Config

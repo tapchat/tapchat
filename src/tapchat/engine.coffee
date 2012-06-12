@@ -35,8 +35,8 @@ class Engine
         @addConnection connInfo for connInfo in conns
 
   daemonize: ->
-    logfile = Path.join(Config.getDataDirectory(), 'tapchat.log')
-    pidfile = Path.join(Config.getDataDirectory(), 'tapchat.pid')
+    logfile = Config.getLogFile()
+    pidfile = Config.getPidFile()
 
     @pid = Daemon.daemonize(logfile, pidfile)
     console.log('Daemon started successfully with pid:', @pid);

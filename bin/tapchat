@@ -12,14 +12,42 @@ var Engine = require(path.join(lib, 'engine'));
 var version = JSON.parse(fs.readFileSync(__dirname + "/../package.json")).version;
 
 program
-  .version(version)
-  .option('-f, --foreground', 'Run in foreground')
-  .parse(process.argv);
+  .version(version);
 
-Config.load(function (config) {
-  new Engine(config, function (engine) {
-    if (!program.foreground) {
-      engine.daemonize();
+program
+  .command('start')
+  .option('-f, --foreground', 'run in foreground')
+  .action(function (cmd) {
+    Config.load(function (config) {
+      new Engine(config, function (engine) {
+        if (!cmd.foreground) {
+          engine.daemonize();
+        }
+      });
+    });
+  });
+
+program
+  .command('stop')
+  .action(function () {
+    var pidFile = Config.getPidFile();
+    if (!path.existsSync(pidFile)) {
+      console.log('TapChat is not running.');
+      return;
+    }
+
+    var pid = fs.readFileSync(pidFile);
+    try {
+      process.kill(pid);
+      fs.unlinkSync(pidFile);
+      console.log('TapChat stopped');
+    } catch (error) {
+      if (error.code === 'ESRCH') {
+        console.log('TapChat is not running (crashed?).');
+        fs.unlinkSync(pidFile);
+      } else {
+        console.log('Unable to stop TapChat. Error:', error.code);
+      }
     }
   });
-});
+program.parse(process.argv);
