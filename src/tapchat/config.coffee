@@ -32,12 +32,12 @@ Config =
     queue = new WorkingQueue(1)
 
     queue.perform (over) =>
-      Program.prompt 'Port [8067]: ', (port) ->
+      Program.prompt 'Choose a port [8067]: ', (port) ->
         config.port = port || 8067
         over()
 
     queue.perform (over) =>
-      Program.password 'Password:', (password) ->
+      Program.password 'Choose a password:', (password) ->
         config.password = PasswordHash.generate(password)
         over()
 

@@ -1,21 +1,25 @@
-#!/usr/bin/env coffee
+#!/usr/bin/env node
 
-Path    = require 'path'
-Fs      = require 'fs'
-Program = require 'commander'
+var path    = require('path');
+var fs      = require('fs');
+var program = require('commander');
 
-lib = Path.join(Path.dirname(Fs.realpathSync(__filename)), '..', 'lib', 'tapchat-server')
+var lib = path.join(path.dirname(fs.realpathSync(__filename)), '..', 'lib', 'tapchat');
 
-Config = require Path.join(lib, 'config')
-Engine = require Path.join(lib, 'engine')
+var Config = require(path.join(lib, 'config'));
+var Engine = require(path.join(lib, 'engine'));
 
-version = JSON.parse(Fs.readFileSync(__dirname + "/../package.json")).version
+var version = JSON.parse(fs.readFileSync(__dirname + "/../package.json")).version;
 
-Program
+program
   .version(version)
   .option('-f, --foreground', 'Run in foreground')
-  .parse(process.argv)
+  .parse(process.argv);
 
-Config.load (config) =>
-  @engine = new Engine config, (engine) =>
-    engine.daemonize() unless Program.foreground
+Config.load(function (config) {
+  new Engine(config, function (engine) {
+    if (!program.foreground) {
+      engine.daemonize();
+    }
+  });
+});
