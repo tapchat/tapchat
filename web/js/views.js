@@ -3,6 +3,7 @@ var BUFFER_EVENTS = {
   "connecting":            "Connecting",
   "quit_server":           "Quit server",
   "notice":                "{{msg}}",
+  "error":                 "Error: {{msg}}",
   "you_nickchange":        "You are now known as {{newnick}}",
   "banned":                "You were banned",
   "connecting_retry":      "Retrying connection in {{interval}} seconds",

@@ -54,12 +54,12 @@ class Connection extends EventEmitter
     if @client && @client.conn.readyState != 'closed'
       @client.disconnect(cb)
     else
-      cb()
+      cb() if cb
 
   reconnect: (callback) ->
     @disconnect =>
       @connect()
-      callback()
+      callback() if callback
 
   delete: (cb) ->
     @disconnect =>
@@ -67,7 +67,7 @@ class Connection extends EventEmitter
       @client.removeAllListeners()
       @client = null
       @engine.db.deleteConnection @id, =>
-        cb()
+        cb() if cb
 
   setNick: (nick) ->
     @client.send("NICK #{nick}")
@@ -249,9 +249,6 @@ class Connection extends EventEmitter
         hostname: @getHostName()
         port:     @getPort(),
         over
-
-    netError: (ex, over) ->
-      over()
 
     registered: (message, over) ->
       @addEventToAllBuffers
@@ -463,14 +460,14 @@ class Connection extends EventEmitter
       queue = new WorkingQueue(1)
 
       # FIXME: @getBuffer(oldnick)?.setName(newnick)
-      
+
       queue.perform (addEventOver) =>
         @consoleBuffer.addEvent
           type: 'you_nickchange'
           newnick: newnick
           oldnick: oldnick,
           addEventOver
-      
+
       for name in [ oldnick ].concat(channels)
         if buffer = @getBuffer(name)
           queue.perform (addEventOver) =>
@@ -483,8 +480,8 @@ class Connection extends EventEmitter
       queue.whenDone -> over()
       queue.doneAddingJobs()
 
-    invite: (channel, from, message, over) ->
-      @getConsoleBuffer.addEvent
+    invite: (channel, from, message, over) =>
+      @consoleBuffer.addEvent
         type:    'channel_invite'
         channel: channel
         from:    from,
@@ -494,8 +491,21 @@ class Connection extends EventEmitter
       #console.log "RAW: #{@getName()} #{JSON.stringify(message)}"
       over()
 
+    netError: (ex, over) ->
+      console.log 'Net error: ', ex
+      @consoleBuffer.addEvent
+        type: 'error'
+        msg: ex,
+        =>
+          @disconnect()
+          over()
+
     error: (error, over) ->
-      console.log "ERR: #{JSON.stringify(error)}" # FIXME: Some sort of error handling...
-      over()
+      console.log 'Error: ', error
+      @consoleBuffer.addEvent
+        type: 'error',
+        msg: error.args.join(' '), =>
+          @disconnect()
+          over()
 
 module.exports = Connection
