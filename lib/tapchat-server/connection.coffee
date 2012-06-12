@@ -144,7 +144,7 @@ class Connection extends EventEmitter
       callback(row)
 
   updateAttributes: (options) ->
-    serverChanged = (@getHostName() && (@getHostName() != options.server || @getPort() != options.port))
+    serverChanged = (@getHostName() && (@getHostName() != options.server || @getPort() != options.port)) || (@client.opt.secure != (!!options.ssl))
     nickChanged   = (@getNick()     && (@getNick()     != options.nick))
 
     @name = options.name

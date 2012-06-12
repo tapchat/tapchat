@@ -127,7 +127,9 @@ class BacklogDB
     setAttribute 'nick',      options.nickname
     setAttribute 'user_name', options.nickname # FIXME
     setAttribute 'real_name', options.realname
-    setAttribute 'is_ssl',    options.ssl
+
+    isSSL = if options.ssl then 1 else 0
+    sql.set 'is_ssl', isSSL
 
     @db.run sql.toString(),
       $cid: cid,

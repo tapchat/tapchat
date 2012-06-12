@@ -469,7 +469,12 @@ var EditNetworkDialog = Backbone.View.extend({
       var self = this;
       _.each(this.model.attributes, function(val, key) {
         if (key === 'nick') key = 'nickname'; // Argh
-        $(self.el).find('input[name=' + key + ']').val(val);
+        var input = $(self.el).find('input[name=' + key + ']');
+        if (input.attr('type') === 'checkbox') {
+          input.attr('checked', val);
+        } else {
+          input.val(val);
+        }
       });
     }
 
@@ -535,6 +540,7 @@ var EditNetworkDialog = Backbone.View.extend({
     }
 
     var data = form.serializeObject();
+    data.ssl = !!data.ssl;
     if (_.isEmpty(data.port)) {
       data.port = 6667;
     }
