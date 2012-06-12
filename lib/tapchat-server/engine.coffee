@@ -29,8 +29,7 @@ class Engine
     throw 'No password set!' unless PasswordHash.isHashed(@password)
 
     @db = new BacklogDB this, =>
-      @startServer(@port)
-      callback(this) if callback
+      @startServer(@port, callback)
 
       @db.selectConnections (conns) =>
         @addConnection connInfo for connInfo in conns
@@ -42,8 +41,7 @@ class Engine
     @pid = Daemon.daemonize(logfile, pidfile)
     console.log('Daemon started successfully with pid:', @pid);
 
-  startServer: (port) ->
-    #@app = Express.createServer(Express.logger())
+  startServer: (port, callback) ->
     @app = Express.createServer
       key:  Fs.readFileSync(Config.getCertFile())
       cert: Fs.readFileSync(Config.getCertFile())
@@ -62,9 +60,9 @@ class Engine
       console.log 'websocket client: connected'
       @addClient(ws)
 
-    @app.listen(port)
-
-    console.log "\nTapChat ready at https://localhost:#{port}\n"
+    @app.listen port, =>
+      console.log "\nTapChat ready at https://localhost:#{port}\n"
+      callback(this) if callback
 
   addClient: (client) ->
     client.sendQueue = new WorkingQueue(1)
