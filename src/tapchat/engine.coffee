@@ -27,7 +27,7 @@ Url          = require('url')
 WebSocket    = require('faye-websocket')
 PasswordHash = require('password-hash')
 CoffeeScript = require('coffee-script')
-Util        = require('util')
+Util         = require('util')
 Daemon       = require('daemon')
 
 Config     = require './config'
@@ -101,7 +101,7 @@ class Engine
       message = JSON.parse(event.data)
 
       unless message._reqid
-        console.log 'Missing _reqid, ignoring messsage', event.data
+        console.log 'Missing _reqid, ignoring message', event.data
         return
 
       console.log 'Got message:', event.data
@@ -115,7 +115,7 @@ class Engine
         try
           handler.apply(this, [ client, message, callback ])
         catch error
-          console.log "Error handling message", error, event
+          console.log "Error handling message", error, event.data, error.stack
           client.close()
       else
         console.log "No handler for #{message._method}"
@@ -197,8 +197,26 @@ class Engine
     queue.doneAddingJobs()
 
   messageHandlers:
-    # FIXME
-    # heartbeat: (client, messaage, callback) ->
+     heartbeat: (client, message, callback) ->
+      @selectedBid = message.selectedBuffer
+
+      seenEids = JSON.parse(message.seenEids)
+
+      queue = new WorkingQueue(1)
+
+      for cid, buffers of seenEids
+        for bid, eid of buffers
+          do (bid, eid) =>
+            queue.perform (over) =>
+              @db.setBufferLastSeenEid(bid, eid, over)
+
+      queue.whenDone =>
+        @db.getAllLastSeenEids (updatedSeenEids) =>
+          @send client,
+            type: 'heartbeat_echo',
+            seenEids: updatedSeenEids
+
+      queue.doneAddingJobs()
 
     say: (client, message, callback) ->
       conn = @findConnection(message.cid)

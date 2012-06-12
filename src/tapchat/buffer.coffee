@@ -28,11 +28,12 @@ _ = require('underscore')
 
 class Buffer extends EventEmitter
   constructor: (connection, info) ->
-    @connection = connection
-    @id         = info.bid
-    @name       = info.name
-    @type       = info.type
-    @autoJoin   = info.auto_join
+    @connection  = connection
+    @id          = info.bid
+    @name        = info.name
+    @type        = info.type
+    @autoJoin    = info.auto_join
+    @lastSeenEid = info.last_seen_eid
 
     @members = {}
 

@@ -56,7 +56,7 @@ class Connection extends EventEmitter
 
     @addEventListeners()
 
-    @engine.db.getBuffers @id, (buffers) =>
+    @engine.db.selectBuffers @id, (buffers) =>
       for bufferInfo in buffers
         buffer = @addBuffer bufferInfo
         @consoleBuffer = buffer if buffer.type == 'console'
@@ -293,11 +293,12 @@ class Connection extends EventEmitter
         buffer.topicText = topic
         buffer.topicBy   = nick
         buffer.topicTime = null
-        buffer.addEvent
-          type: 'channel_topic'
-          author: nick
-          topic: topic,
-          over
+        unless _.isEmpty(nick)
+          buffer.addEvent
+            type: 'channel_topic'
+            author: nick
+            topic: topic,
+            over
       else
         over()
 

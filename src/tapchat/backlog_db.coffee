@@ -103,7 +103,7 @@ class BacklogDB
         throw err if err
         callback(row)
 
-  getBuffers: (cid, callback) ->
+  selectBuffers: (cid, callback) ->
     @db.all 'SELECT * FROM buffers WHERE cid = $cid',
       $cid: cid,
       (err, rows) ->
@@ -210,5 +210,41 @@ class BacklogDB
       (err, rows) ->
         throw err if err
         callback(rows)
+
+  getAllLastSeenEids: (callback) ->
+    query = """
+      SELECT cid, bid, last_seen_eid FROM buffers WHERE last_seen_eid IS NOT NULL
+    """
+
+    @db.all query,
+      (err, rows) ->
+        throw err if err
+
+        result = {}
+
+        for row in rows
+          cid = parseInt(row.cid)
+          bid = parseInt(row.bid)
+          eid = parseInt(row.last_seen_eid)
+          result[cid] ?= {}
+          result[cid][bid] = eid
+
+        callback(result)
+
+  setBufferLastSeenEid: (bid, eid, callback) ->
+    query = """
+      UPDATE buffers
+      SET last_seen_eid = $eid,
+      updated_at = $time
+      WHERE bid = $bid
+    """
+
+    @db.run query,
+      $eid: eid
+      $bid: bid
+      $time: new Date().getTime(),
+      (err) ->
+        throw err if err
+        callback()
 
 module.exports = BacklogDB
