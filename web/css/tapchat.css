@@ -56,7 +56,7 @@ body {
   border-bottom: 1px solid #bbb;
 }
 
-#nav #left, #nav #right {
+.left, .right {
   white-space: nowrap;
   padding: 0 10px;
   display: table-cell;
@@ -64,7 +64,7 @@ body {
   position: relative;
 }
 
-#nav div#left {
+.left {
   width: 100%;
 }
 
@@ -234,6 +234,15 @@ body {
 .topic .topic_text {
   padding-left: 6px;
   font-size: 14px;
+}
+
+.topic .right {
+  padding: 0;
+}
+
+.topic button {
+  background: transparent;
+  border: 0;
 }
 
 .events-outer {

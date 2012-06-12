@@ -51,7 +51,16 @@
 
     <script type="text/html" id="BufferView">
       <div class="topic">
-        <div class="topic_text"></div>
+        <div class="left topic_text"></div>
+        <!--
+        <div class="right"><button class="btn dropdown-toggle" data-toggle="dropdown"><i class="icon-align-justify"></i></button>
+          <ul class="dropdown-menu pull-right">
+            <li><a href="#">Part Channel</a></li>
+            <li><a href="#">Archive Window</a></li>
+            <li><a href="#">Delete Window</a></li>
+          </ul>
+        </div>
+        -->
       </div>
       <div class="events-outer">
         <div class="events"></div>
@@ -156,18 +165,18 @@
           TapChat
         </div>
 
-        <div id="left">
+        <div class="left">
           <button id="main-menu-button" class="btn dropdown-toggle" data-toggle="dropdown"><span id="title"></span> <b class="caret"></b></button>
           <ul id="main-menu" class="dropdown-menu">
             <li class="divider"></li>
-            <li><a href="#" id="settings-item"><i class="icon-cog"></i> Settings</a></li>
+            <li><a href="#" id="settings-item"><i class="icon-wrench"></i> Settings</a></li>
           </ul>
         </div>
 
-        <div id="right">
+        <div class="right">
           <button id="join-btn" class="btn"><i class="icon-plus"></i><span> Join Channel</span></button>
           <button id="members-btn" class="btn" data-toggle="button"><i class="icon-user"></i></button>
-          <button id="settings-btn" class="btn"><i class="icon-cog"></i></button>
+          <button id="settings-btn" class="btn"><i class="icon-wrench"></i></button>
         </div>
       </div>
 
