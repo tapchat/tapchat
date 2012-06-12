@@ -46,7 +46,16 @@ class Engine
       key:  Fs.readFileSync(Config.getCertFile())
       cert: Fs.readFileSync(Config.getCertFile())
 
-    @app.use(Express.static(__dirname + '/../../web'));
+    @app.use(Express.static(__dirname + '/../../web'))
+
+    @app.set 'views', __dirname + '/../../web'
+    @app.set 'view engine', 'html.eco'
+    @app.register('.html.eco', require('eco'))
+    @app.get '/', (req, res) =>
+      res.render 'index',
+        layout:          false,
+        num_clients:     @clients.length
+        num_connections: @connections.length
 
     @app.addListener 'upgrade', (request, socket, head) =>
       query = Url.parse(request.url, true).query
