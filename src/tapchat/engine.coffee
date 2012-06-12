@@ -70,7 +70,12 @@ class Engine
 
     client.onmessage = (event) =>
       message = JSON.parse(event.data)
-      console.log "Got message: #{Util.inspect(message)}"
+
+      unless message._reqid
+        console.log 'Missing _reqid, ignoring messsage', event.data
+        return
+
+      console.log 'Got message:', event.data
 
       callback = (reply) =>
         @send client,
@@ -182,6 +187,7 @@ class Engine
           name: to
           cid:  conn.id
           type: 'open_buffer'
+          _reqid: message._reqid
 
     join: (client, message, callback) ->
       chan = message.channel

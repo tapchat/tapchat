@@ -3,7 +3,13 @@ var NetworkList = Backbone.Collection.extend({
 });
 
 var BufferList = Backbone.Collection.extend({
-  model: Buffer
+  model: Buffer,
+
+  findByName: function (name) {
+    return this.find(function (buffer) {
+      return buffer.get('name') == name;
+    });
+  }
 });
 
 var MemberList = Backbone.Collection.extend({

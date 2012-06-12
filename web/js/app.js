@@ -1,14 +1,12 @@
 Backbone.sync = function() {};
 
 function App () {
-  this.controller = new Router();
+  this.lastReqId   = 1;
+  this.controller  = new Router();
   this.networkList = new NetworkList();
-  // Util.bindMessageHandlers(this);
 }
 
 _.extend(App.prototype, Backbone.Events, {
-  _reqid: 0,
-
   connect: function (password) {
     if (this.socket) {
       return;
@@ -43,7 +41,21 @@ _.extend(App.prototype, Backbone.Events, {
 
   processMessage: function (message) {
     if (message._reqid) {
-      // FIXME: Not implemented;
+      var reqid = message._reqid;
+      message = message.msg;
+      if (message.cid) {
+        var network = this.networkList.get(message.cid);
+        if (network) {
+          network.processResponse(message);
+        }
+      }
+      /*
+      var handler = this.responseHandlers[reqid];
+      if (handler) {
+        delete this.responseHandlers[reqid];
+        handler(message);
+      }
+      */
       return;
     }
 
@@ -52,6 +64,7 @@ _.extend(App.prototype, Backbone.Events, {
       message.nid = message.cid;
       message.cid = null;
     }
+
 
     var type = message.type;
     if (this.messageHandlers[type]) {
@@ -71,9 +84,10 @@ _.extend(App.prototype, Backbone.Events, {
   },
 
   send: function (message) {
+    message._reqid = this.lastReqId;
     console.info("sending:", message);
     this.socket.send(JSON.stringify(message));
-    this._reqid ++;
+    this.lastReqId++;
   },
 
   sendHeartbeat: function() {
@@ -83,6 +97,10 @@ _.extend(App.prototype, Backbone.Events, {
   setConnectionState: function(newState) {
     this.connectionState = newState;
     this.trigger('connection-state-changed', newState);
+  },
+
+  showBuffer: function (nid, bid) {
+    app.controller.navigate('/' + nid + '/' + bid, { trigger: true });
   },
 
   messageHandlers: {

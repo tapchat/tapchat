@@ -50,6 +50,13 @@ var AppView = Backbone.View.extend({
       $('#users').append(buffer.memberListView.render().el);
     }
 
+    var network = buffer.network;
+    if (network.pendingOpenBuffer === buffer.get('name')) {
+      app.showBuffer(buffer.get('nid'), buffer.get('id'));
+      network.pendingOpenBuffer = null;
+      return;
+    }
+
     var networkMatches = app.controller.networkId == buffer.network.id;
     var bufferMatches  = app.controller.bufferId  == buffer.id;
     var isConsole      = (!app.controller.bufferId) && (buffer instanceof ConsoleBuffer);

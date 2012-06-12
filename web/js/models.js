@@ -198,6 +198,18 @@ var Network = Backbone.Model.extend({
     }
   },
 
+  processResponse: function (response) {
+    if (response.type === 'open_buffer') {
+      var buffer = this.bufferList.findByName(response.name);
+      if (buffer) {
+        app.showBuffer(buffer.network.id, buffer.id);
+        this.pendingOpenBuffer = null;
+      } else {
+        this.pendingOpenBuffer = response.name;
+      }
+    }
+  },
+
   reload: function (message) {
     this.update(message);
   },
