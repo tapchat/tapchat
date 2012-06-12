@@ -40,7 +40,7 @@ class Engine
     pidfile = Path.join(Config.getDataDirectory(), 'tapchat.pid')
 
     @pid = Daemon.daemonize(logfile, pidfile)
-    console.log('Daemon started successfully with pid: ' + pid);
+    console.log('Daemon started successfully with pid:', @pid);
 
   startServer: (port) ->
     #@app = Express.createServer(Express.logger())

@@ -1,6 +1,6 @@
 {
   "name": "tapchat",
-  "version": "0.0.1-48",
+  "version": "0.0.2",
   "author": {
     "name": "Eric Butler",
     "email": "eric@codebutler.com"
@@ -17,7 +17,10 @@
   ],
   "homepage": "http://tapchatapp.com/",
   "scripts": {
-    "start": "coffee ./bin/tapchat-server"
+    "start": "coffee ./bin/tapchat"
+  },
+  "bin": {
+    "tapchat": "./bin/tapchat"
   },
   "contributors": [],
   "dependencies": {
@@ -29,7 +32,7 @@
     "squel": "1.0.3",
     "express": "2.5.9",
     "password-hash": "1.2.0",
-    "daemonic": "0.0.2",
+    "daemon": "0.5.1",
     "mkdirp": "0.3.3",
     "commander": "0.6.1"
   },
@@ -46,10 +49,5 @@
       "url": "http://www.gnu.org/licenses/gpl-3.0.txt"
     }
   ],
-  "analyze": false,
-  "optionalDependencies": {},
-  "dist": {
-    "shasum": "bab66556115e298cc929fee6ce876b6d59db200f"
-  },
-  "subdomain": "cbtc"
+  "optionalDependencies": {}
 }
