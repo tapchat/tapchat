@@ -1,5 +1,5 @@
 var BUFFER_EVENTS = {
-  "socked_closed":         "Disconnected",
+  "socket_closed":         "Disconnected",
   "connecting":            "Connecting",
   "quit_server":           "Quit server",
   "notice":                "{{msg}}",
