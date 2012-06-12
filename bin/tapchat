@@ -9,8 +9,10 @@ lib = Path.join(Path.dirname(Fs.realpathSync(__filename)), '..', 'lib', 'tapchat
 Config = require Path.join(lib, 'config')
 Engine = require Path.join(lib, 'engine')
 
+version = JSON.parse(Fs.readFileSync(__dirname + "/../package.json")).version
+
 Program
-  .version('0.0.1')
+  .version(version)
   .option('-f, --foreground', 'Run in foreground')
   .parse(process.argv)
 
