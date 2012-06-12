@@ -115,6 +115,14 @@ var AppView = Backbone.View.extend({
     });
 
     dialog.find("input[type=password]").focus();
+  },
+
+  showError: function (text) {
+    var dialog = bootbox.modal(text, "Error", {
+      "animate": false,
+      "backdrop": "static",
+      "headerCloseButton": null
+    });
   }
 });
 

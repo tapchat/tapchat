@@ -33,6 +33,7 @@ _.extend(App.prototype, Backbone.Events, {
 
     this.socket.onclose = function(evt) {
       console.info("Websocket connection closed.", evt);
+      app.view.showError("Connection closed, please reload.");
     };
 
     this.socket.onerror = function() {
