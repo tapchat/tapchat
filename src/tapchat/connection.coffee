@@ -242,8 +242,15 @@ class Connection extends EventEmitter
       do (signalName, signalHandler) =>
         @client.addListener signalName, (args...) =>
           handler = =>
+            #console.log 'STARTING HANDLER FOR ', signalName
             signalHandler.apply(this, arguments)
-          @queue.perform handler, arguments...
+
+          @queue.perform (over) ->
+            overWrapper = =>
+              #console.log 'DONE WITH HANDLER FOR ', signalName
+              over()
+            args.push(overWrapper)
+            handler args...
 
   signalHandlers:
     connecting: (over) ->
@@ -299,8 +306,8 @@ class Connection extends EventEmitter
             author: nick
             topic: topic,
             over
-      else
-        over()
+          return
+      over()
 
     join: (channel, nick, message, over) ->
       return @signalHandlers.selfJoin.apply(this, [ channel, message, over ] ) if nick == @getNick()

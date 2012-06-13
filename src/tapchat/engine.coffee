@@ -29,6 +29,7 @@ PasswordHash = require('password-hash')
 CoffeeScript = require('coffee-script')
 Util         = require('util')
 Daemon       = require('daemon')
+_            = require 'underscore'
 
 Config     = require './config'
 B          = require './message_builder'
@@ -197,7 +198,7 @@ class Engine
     queue.doneAddingJobs()
 
   messageHandlers:
-     heartbeat: (client, message, callback) ->
+    heartbeat: (client, message, callback) ->
       @selectedBid = message.selectedBuffer
 
       seenEids = JSON.parse(message.seenEids)
