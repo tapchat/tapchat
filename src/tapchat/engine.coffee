@@ -221,10 +221,12 @@ class Engine
 
       for cid, buffers of seenEids
         connection = @findConnection(parseInt(cid))
+        throw "connection not found: #{cid}" unless connection
         for bid, eid of buffers
-          do (bid, eid) =>
+          buffer = connection.findBuffer(parseInt(bid))
+          throw "buffer not found: #{bid}" unless buffer
+          do (buffer, eid) =>
             queue.perform (over) =>
-              buffer = connection.findBuffer(parseInt(bid))
               buffer.setLastSeenEid(eid, over)
 
       queue.whenDone =>
