@@ -21,10 +21,12 @@
 Program      = require('commander')
 WorkingQueue = require('capisce').WorkingQueue
 PasswordHash = require('password-hash')
-Path         = require 'path'
-Fs           = require 'fs'
-Mkdirp       = require 'mkdirp'
-ChildProcess = require 'child_process'
+Path         = require('path')
+Fs           = require('fs')
+Mkdirp       = require('mkdirp')
+ChildProcess = require('child_process')
+UUID         = require('node-uuid')
+Crypto       = require('crypto')
 
 Config =
   getAppVersion: ->
@@ -68,9 +70,14 @@ Config =
       Config.generateCert over
 
     queue.whenDone =>
-      Config.saveConfig config, callback
+      Config.verifyConfig config, callback
 
     queue.doneAddingJobs()
+
+  verifyConfig: (config, callback) ->
+    config.push_id  = UUID.v4()                                 unless config.push_id
+    config.push_key = Crypto.randomBytes(32).toString('base64') unless config.push_key
+    Config.saveConfig config, callback
 
   generateCert: (callback) ->
     certFile = Config.getCertFile()
@@ -97,7 +104,8 @@ Config =
       if exists
         Fs.readFile Config.getConfigFile(), (err, data) =>
           throw err if err
-          callback(JSON.parse(data))
+          config = JSON.parse(data)
+          Config.verifyConfig(config, callback)
       else
         callback(null)
 

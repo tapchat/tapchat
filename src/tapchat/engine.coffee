@@ -30,12 +30,15 @@ CoffeeScript = require('coffee-script')
 Util         = require('util')
 Daemon       = require('daemon')
 _            = require 'underscore'
+DataBuffer   = require('buffer').Buffer
 
+Base64     = require '../base64'
 Config     = require './config'
 B          = require './message_builder'
 Buffer     = require './buffer'
 Connection = require './connection'
 BacklogDB  = require './backlog_db'
+PushClient = require './push_client'
 
 {starts, ends, compact, count, merge, extend, flatten, del, last} = CoffeeScript.helpers
 
@@ -48,6 +51,10 @@ class Engine
     @port     = config.port
 
     throw 'No password set!' unless PasswordHash.isHashed(@password)
+
+    @pushId  = config.push_id
+    @pushKey = new DataBuffer(config.push_key, 'base64')
+    @pushClient = new PushClient(this)
 
     @db = new BacklogDB this, =>
       @startServer(@port, callback)
@@ -163,9 +170,13 @@ class Engine
     return null
 
   broadcast: (message, cb) ->
-    queue = new WorkingQueue(@clients.length)
+    queue = new WorkingQueue(@clients.length + 1)
 
     #console.log 'BROADCAST', JSON.stringify(message)
+    unless message.is_backlog
+      if message.highlight
+        queue.perform (over) =>
+          @pushClient.sendPush(message, over)
 
     for client in @clients
       do (client) =>
@@ -182,9 +193,11 @@ class Engine
 
     queue.perform (over) =>
       @send client,
-        type: 'header'
-        version: Config.getAppVersion(),
-        idle_interval: 29000, # FIXME
+        type:          'header'
+        version:       Config.getAppVersion()
+        idle_interval: 29000 # FIXME
+        push_id:       @pushId
+        push_key:      Base64.urlEncode(@pushKey)
         over
 
     for conn in @connections
