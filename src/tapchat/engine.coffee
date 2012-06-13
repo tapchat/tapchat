@@ -88,9 +88,8 @@ class Engine
     @app.addListener 'upgrade', (request, socket, head) =>
       query = Url.parse(request.url, true).query
       unless PasswordHash.verify(query.password, @password)
-        # FIXME: Return proper HTTP error
         console.log 'bad password'
-        request.socket.end('foo')
+        request.socket.end('HTTP/1.1 403 Bad password\r\n\r\n')
         return
 
       ws = new WebSocket(request, socket, head)
