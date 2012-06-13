@@ -18,78 +18,31 @@
 # You should have received a copy of the GNU General Public License
 # along with TapChat.  If not, see <http://www.gnu.org/licenses/>.
 
-Path    = require 'path'
-Fs      = require 'fs'
-Squel   = require 'squel'
-Sqlite3 = require('sqlite3').verbose()
-_       = require('underscore')
+Path     = require('path')
+Fs       = require('fs')
+Squel    = require('squel')
+Sqlite3  = require('sqlite3').verbose()
+_        = require('underscore')
 
-Config = require './config'
+Config     = require('./config')
+DBMigrator = require('./db_migrator')
 
 CoffeeScript = require 'coffee-script'
 {starts, ends, compact, count, merge, extend, flatten, del, last} = CoffeeScript.helpers
+
+SCHEMA_VERSION = 2
 
 class BacklogDB
   constructor: (engine, callback) ->
     @file = Path.join(Config.getDataDirectory(), 'backlog.db')
 
+    migrationsDir = __dirname + '../../../db'
+
     @db = new Sqlite3.Database @file, =>
-      @createTables callback
-
-  createTables: (callback) =>
-    # FIXME: Add some sort of migrations system in here
-    statements = [
-      """
-      CREATE TABLE IF NOT EXISTS connections (
-          cid          INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
-          name         TEXT     NOT NULL,
-          server       TEXT     NOT NULL,
-          port         INTEGER  NOT NULL,
-          is_ssl       BOOLEAN  NOT NULL,
-          nick         TEXT     NOT NULL,
-          user_name    TEXT     NOT NULL,
-          real_name    TEXT     NOT NULL,
-          auto_connect BOOLEAN  NOT NULL DEFAULT 1,
-          created_at   DATETIME DEFAULT (strftime('%s','now')),
-          updated_at   DATETIME
-      );
-      """
-      """
-      CREATE TABLE IF NOT EXISTS buffers (
-          bid           INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
-          cid           INTEGER  NOT NULL,
-          name          TEXT     NOT NULL,
-          type          TEXT     NOT NULL,
-          archived      BOOLEAN  NOT NULL DEFAULT 0,
-          auto_join     BOOLEAN,
-          last_seen_eid INTEGER,
-          created_at    DATETIME DEFAULT (strftime('%s','now')),
-          updated_at    DATETIME
-      );
-      """
-      """
-      CREATE TABLE IF NOT EXISTS events (
-          eid        INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
-          bid        INTEGER  NOT NULL,
-          data       TEXT     NOT NULL,
-          created_at DATETIME DEFAULT (strftime('%s','now'))
-      );
-      """
-      """
-      CREATE INDEX IF NOT EXISTS connections_name ON connections (name);
-      """
-      """
-      CREATE INDEX IF NOT EXISTS events_bid ON events (bid);
-      """
-    ]
-
-    @db.serialize =>
-      count = statements.length
-      for sql in statements
-        @db.run sql, (err) ->
-          count--
-          throw err if err
-          callback() if count == 0
+      m = new DBMigrator
+        db:  @db
+        dir: migrationsDir
+      m.migrate SCHEMA_VERSION, callback
 
   selectConnections: (callback) ->
     @db.all 'SELECT * FROM connections', (err, rows) ->

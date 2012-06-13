@@ -207,10 +207,12 @@ class Engine
       queue = new WorkingQueue(1)
 
       for cid, buffers of seenEids
+        connection = @findConnection(parseInt(cid))
         for bid, eid of buffers
           do (bid, eid) =>
             queue.perform (over) =>
-              @db.setBufferLastSeenEid(bid, eid, over)
+              buffer = connection.findBuffer(parseInt(bid))
+              buffer.setLastSeenEid(eid, over)
 
       queue.whenDone =>
         @db.getAllLastSeenEids (updatedSeenEids) =>

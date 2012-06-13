@@ -217,6 +217,11 @@ class Connection extends EventEmitter
   isSSL: ->
     @client.opt.secure
 
+  findBuffer: (bid) ->
+    for buffer in @buffers
+      return buffer if buffer.id == bid
+    return null
+
   getBuffer: (name) ->
     for buffer in @buffers
       return buffer if buffer.name == name
@@ -251,6 +256,9 @@ class Connection extends EventEmitter
               over()
             args.push(overWrapper)
             handler args...
+
+  shouldHighlight: (message) ->
+    !!message.match(@getNick())
 
   signalHandlers:
     connecting: (over) ->
@@ -409,7 +417,7 @@ class Connection extends EventEmitter
             from:      @getNick()
             chan:      to
             msg:       text
-            highlight: false # FIXME
+            highlight: false
             self:      true,
             over
         else
@@ -427,12 +435,13 @@ class Connection extends EventEmitter
     message: (nick, to, text, message, over) ->
       if to.match(/^[&#]/)
         if buffer = @getBuffer(to)
+          highlight = @shouldHighlight(text)
           buffer.addEvent
             type:      'buffer_msg'
             from:      nick
             chan:      to
             msg:       text
-            highlight: false # FIXME
+            highlight: highlight,
             self:      false,
             over
         else

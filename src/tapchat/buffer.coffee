@@ -81,6 +81,11 @@ class Buffer extends EventEmitter
     @isJoined = joined
     @members = {} unless joined
 
+  setLastSeenEid: (eid, callback) ->
+    @connection.engine.db.setBufferLastSeenEid @id, eid, =>
+      @lastSeenEid = eid
+      callback()
+
   # FIXME: setName: (name) ->
   # @connection.engine.db.updateBuffer { name: name } @id, =>
   #   @name = name
