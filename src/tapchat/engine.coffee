@@ -183,6 +183,7 @@ class Engine
     queue.perform (over) =>
       @send client,
         type: 'header'
+        version: Config.getAppVersion(),
         idle_interval: 29000, # FIXME
         over
 

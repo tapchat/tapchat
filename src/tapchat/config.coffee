@@ -27,6 +27,9 @@ Mkdirp       = require 'mkdirp'
 ChildProcess = require 'child_process'
 
 Config =
+  getAppVersion: ->
+    JSON.parse(Fs.readFileSync(__dirname + "/../../package.json")).version;
+
   getDataDirectory: ->
     home = process.env['HOME']
     if process.platform == 'darwin'

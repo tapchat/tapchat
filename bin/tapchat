@@ -9,10 +9,8 @@ var lib = path.join(path.dirname(fs.realpathSync(__filename)), '..', 'lib', 'tap
 var Config = require(path.join(lib, 'config'));
 var Engine = require(path.join(lib, 'engine'));
 
-var version = JSON.parse(fs.readFileSync(__dirname + "/../package.json")).version;
-
 program
-  .version(version);
+  .version(Config.getAppVersion())
 
 program
   .command('start')
