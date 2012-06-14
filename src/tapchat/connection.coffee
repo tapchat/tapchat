@@ -520,7 +520,7 @@ class Connection extends EventEmitter
       queue.whenDone -> over()
       queue.doneAddingJobs()
 
-    invite: (channel, from, message, over) =>
+    invite: (channel, from, message, over) ->
       @consoleBuffer.addEvent
         type:    'channel_invite'
         channel: channel
