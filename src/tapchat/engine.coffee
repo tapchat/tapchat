@@ -291,4 +291,19 @@ class Engine
       conn = @findConnection(message.cid)
       @removeConnection(conn, callback)
 
+    'archive-buffer': (client, message, callback) ->
+      conn = @findConnection(message.cid)
+      buffer = conn.findBuffer(message.id)
+      buffer.archive(callback)
+
+    'unarchive-buffer': (client, message, callback) ->
+      conn = @findConnection(message.cid)
+      buffer = conn.findBuffer(message.id)
+      buffer.unarchive(callback)
+
+    'delete-buffer': (client, message, callback) ->
+      conn = @findConnection(message.cid)
+      buffer = conn.findBuffer(message.id)
+      buffer.delete(callback)
+
 module.exports = Engine

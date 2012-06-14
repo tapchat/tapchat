@@ -54,6 +54,7 @@ module.exports =
       cid:         buffer.connection.id
       bid:         buffer.id
       name:        buffer.name
+      archived:    buffer.isArchived
 
     msg.last_seen_eid = buffer.lastSeenEid if buffer.lastSeenEid
     msg.joined = buffer.isJoined if buffer.type == 'channel'

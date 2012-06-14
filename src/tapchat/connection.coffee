@@ -71,7 +71,7 @@ class Connection extends EventEmitter
     @client.connect()
 
   disconnect: (cb) ->
-    if @client && @client.conn.readyState != 'closed'
+    if @client
       @client.disconnect(cb)
     else
       cb() if cb
@@ -113,7 +113,7 @@ class Connection extends EventEmitter
 
   removeBuffer: (buffer) ->
     buffer.removeAllListeners()
-    @buffers.remove(buffer)
+    @buffers.splice(@buffers.indexOf(buffer), 1)
     @emit 'event', B.deleteBuffer(buffer)
 
   sendBacklog: (client, callback) ->
@@ -291,7 +291,8 @@ class Connection extends EventEmitter
         over
 
       for buffer in @buffers
-        @client.join(buffer.name) if buffer.type == 'channel' && buffer.autoJoin
+        # FIXME: Just use isArchived to indicate if should autojoin and remove that column
+        @client.join(buffer.name) if buffer.type == 'channel' && (!buffer.isArchived) && buffer.autoJoin
 
     motd: (motd, over) ->
       @consoleBuffer.addEvent B.serverMotd(this, motd),

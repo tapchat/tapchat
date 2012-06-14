@@ -112,6 +112,7 @@ class BacklogDB
           callback(row)
 
   deleteConnection: (cid, callback) ->
+    # FIXME: Also delete all buffers and events!
     @db.run "DELETE FROM connections WHERE cid = $cid", $cid: cid, (err) ->
       throw err if err
       throw "Didn't find connection" unless @changes
@@ -131,6 +132,15 @@ class BacklogDB
           bid:  @lastID
           name: name
           type: type
+
+  deleteBuffer: (cid, bid, callback) ->
+    # FIXME: Also delete all events!
+    @db.run 'DELETE FROM buffers WHERE cid = $cid AND bid = $bid',
+      $cid: cid
+      $bid: bid,
+      (err) ->
+        throw err if err
+        callback()
 
   insertEvent: (event, callback) ->
     query = """
@@ -184,17 +194,35 @@ class BacklogDB
 
         callback(result)
 
-  setBufferLastSeenEid: (bid, eid, callback) ->
+  setBufferLastSeenEid: (cid, bid, eid, callback) ->
     query = """
       UPDATE buffers
       SET last_seen_eid = $eid,
       updated_at = $time
-      WHERE bid = $bid
+      WHERE cid = $cid AND bid = $bid
     """
 
     @db.run query,
       $eid: eid
+      $cid: cid
       $bid: bid
+      $time: new Date().getTime(),
+      (err) ->
+        throw err if err
+        callback()
+
+  setBufferArchived: (cid, bid, archived, callback) ->
+    query = """
+      UPDATE buffers
+      SET archived = $archived,
+      updated_at = $time
+      WHERE cid = $cid AND bid = $bid
+    """
+
+    @db.run query,
+      $cid: cid
+      $bid: bid
+      $archived: (if archived then 1 else 0)
       $time: new Date().getTime(),
       (err) ->
         throw err if err

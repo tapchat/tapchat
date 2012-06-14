@@ -34,6 +34,7 @@ class Buffer extends EventEmitter
     @type        = info.type
     @autoJoin    = info.auto_join
     @lastSeenEid = info.last_seen_eid
+    @isArchived  = !!info.archived
 
     @members = {}
 
@@ -82,13 +83,37 @@ class Buffer extends EventEmitter
     @members = {} unless joined
 
   setLastSeenEid: (eid, callback) ->
-    @connection.engine.db.setBufferLastSeenEid @id, eid, =>
+    @connection.engine.db.setBufferLastSeenEid @connection.id, @id, eid, =>
       @lastSeenEid = eid
       callback()
 
   # FIXME: setName: (name) ->
   # @connection.engine.db.updateBuffer { name: name } @id, =>
   #   @name = name
+
+  archive: (callback) ->
+    return callback() if @isJoined
+    @connection.engine.db.setBufferArchived @connection.id, @id, true,  =>
+      @isArchived = true
+      @connection.engine.broadcast
+        type: 'buffer_archived'
+        cid:  @connection.id
+        bid:  @id,
+        callback
+
+  unarchive: (callback) ->
+    @connection.engine.db.setBufferArchived @connection.id, @id, false, =>
+      @isArchived = false
+      @connection.engine.broadcast
+        type: 'buffer_unarchived'
+        cid:  @connection.id
+        bid:  @id,
+        callback
+
+  delete: (callback) ->
+    return callback() if @isJoined
+    @connection.engine.db.deleteBuffer @connection.id, @id, =>
+      @connection.removeBuffer(this, callback)
 
 # FIXME: Better way to handle consts in coffeescript?
 Buffer.prototype.TYPE_CONSOLE = 'console'
