@@ -364,7 +364,6 @@ class Connection extends EventEmitter
 
       if buffer = @getBuffer(channel)
         buffer.removeMember(nick)
-        buffer.isJoined = false
         buffer.addEvent
           type: 'parted_channel'
           nick: nick,
