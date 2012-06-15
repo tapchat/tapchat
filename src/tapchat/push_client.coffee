@@ -42,17 +42,10 @@ class PushClient
     # saying.
     [ iv, ciphertext ] = @encrypt(@engine.pushKey, JSON.stringify(info))
 
-    console.log 'iv wat', iv.toString('base64')
-    console.log 'iv wat', Base64.urlEncode(iv.toString('binary'))
-    console.log 'iv waa', Base64.encode(iv)
-    console.log 'iv waa', Base64.urlEncode(iv)
-
     body =
       id:      @engine.pushId
       message: Base64.urlEncode(ciphertext)
       iv:      Base64.urlEncode(iv)
-
-    console.log('POST', body)
 
     Request.post
       url: NOTIFY_URL
@@ -68,9 +61,6 @@ class PushClient
 
     ciph  = cipher.update msg, 'utf8', 'binary'
     ciph += cipher.final()
-
-    console.log('ciph', ciph)
-    console.log('iv', iv)
 
     return [ iv, new Buffer(ciph, 'binary') ]
 
