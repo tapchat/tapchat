@@ -51,6 +51,7 @@ class Connection extends EventEmitter
       secure:      !!options.is_ssl
       userName:    options.user_name
       realName:    options.real_name
+      password:    options.server_pass
       autoConnect: false
       debug:       true
 
@@ -164,20 +165,21 @@ class Connection extends EventEmitter
       callback(row)
 
   updateAttributes: (options) ->
-    serverChanged = (@getHostName() && (@getHostName() != options.server || @getPort() != options.port)) || (@client.opt.secure != (!!options.ssl))
+    serverChanged = (@getHostName() && (@getHostName() != options.server || @getPort() != options.port)) || (@isSSL() != (!!options.ssl)) || (@getServerPass() != options.server_pass)
     nickChanged   = (@getNick()     && (@getNick()     != options.nick))
 
     @name = options.name
 
-    @client.opt.server      = options.server
-    @client.opt.port        = options.port
-    @client.opt.secure      = !!options.is_ssl
-    @client.opt.nick        = options.nick
-    @client.opt.userName    = options.user_name
-    @client.opt.realName    = options.real_name
+    @client.opt.server   = options.server
+    @client.opt.port     = options.port
+    @client.opt.secure   = !!options.is_ssl
+    @client.opt.nick     = options.nick
+    @client.opt.userName = options.user_name
+    @client.opt.realName = options.real_name
+    @client.opt.password = options.server_pass
 
     if serverChanged
-      @reconnect()
+      @reconnect() # FIXME: Only if previously connected
     else
       @setNick(@client.opt.nick) if nickChanged
 
@@ -216,6 +218,9 @@ class Connection extends EventEmitter
 
   isSSL: ->
     @client.opt.secure
+
+  getServerPass: ->
+    @client.opt.password
 
   findBuffer: (bid) ->
     for buffer in @buffers

@@ -30,7 +30,7 @@ DBMigrator = require('./db_migrator')
 CoffeeScript = require 'coffee-script'
 {starts, ends, compact, count, merge, extend, flatten, del, last} = CoffeeScript.helpers
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 class BacklogDB
   constructor: (engine, callback) ->
@@ -94,15 +94,19 @@ class BacklogDB
     setAttribute = (name, value) =>
       sql.set name, value if value
 
-    setAttribute 'name',      options.hostname # FIXME
-    setAttribute 'server',    options.hostname
-    setAttribute 'port',      options.port
-    setAttribute 'nick',      options.nickname
-    setAttribute 'user_name', options.nickname # FIXME
-    setAttribute 'real_name', options.realname
+    name = unless _.isEmpty(options.name) then options.name else options.hostname
 
-    isSSL = if options.ssl then 1 else 0
+    setAttribute 'name',        name
+    setAttribute 'server',      options.hostname
+    setAttribute 'port',        options.port
+    setAttribute 'nick',        options.nickname
+    setAttribute 'user_name',   options.nickname # FIXME
+    setAttribute 'real_name',   options.realname
+
+    isSSL = if (!!Number(options.ssl)) then 1 else 0
     sql.set 'is_ssl', isSSL
+
+    sql.set 'server_pass',  options.server_pass
 
     @db.run sql.toString(),
       $cid: cid,

@@ -33,6 +33,7 @@ module.exports =
     port:         conn.getPort()
     disconnected: conn.isDisconnected()
     ssl:          conn.isSSL()
+    server_pass:  conn.getServerPass()
 
   serverDetailsChanged: (conn) ->
     merge(@makeServer(conn), type: 'server_details_changed')
