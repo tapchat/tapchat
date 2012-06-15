@@ -29,8 +29,9 @@ class ChannelBuffer extends ChatBuffer
     @autoJoin = info.auto_join
 
   setJoined: (joined) ->
-    @isJoined = joined
-    @members = {} unless joined
+    @unarchive =>
+      @isJoined = joined
+      @members = {} unless joined
 
   setMembers: (nicks) ->
     @members = {}
@@ -48,5 +49,9 @@ class ChannelBuffer extends ChatBuffer
 
   removeMember: (nick) ->
     delete @members[nick]
+
+  archive: (callback) ->
+    return callback() if this instanceof ChannelBuffer and @isJoined
+    super(callback)
 
 module.exports = ChannelBuffer

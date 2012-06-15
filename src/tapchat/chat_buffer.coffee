@@ -26,7 +26,7 @@ class ChatBuffer extends Buffer
     @isArchived  = !!info.archived
 
   archive: (callback) ->
-    return callback() if self instanceof ChannelBuffer and @isJoined
+    return callback() if @isArchived
     @connection.engine.db.setBufferArchived @connection.id, @id, true,  =>
       @isArchived = true
       @connection.engine.broadcast
@@ -36,6 +36,7 @@ class ChatBuffer extends Buffer
         callback
 
   unarchive: (callback) ->
+    return callback() unless @isArchived
     @connection.engine.db.setBufferArchived @connection.id, @id, false, =>
       @isArchived = false
       @connection.engine.broadcast

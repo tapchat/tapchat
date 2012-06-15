@@ -62,9 +62,7 @@ class Connection extends EventEmitter
     @engine.db.selectBuffers @id, (buffers) =>
       for bufferInfo in buffers
         buffer = @addBuffer bufferInfo
-        if buffer instanceof ConsoleBuffer
-          @consoleBuffer = buffer
-          break
+        @consoleBuffer = buffer if buffer instanceof ConsoleBuffer
       unless @consoleBuffer
         @createBuffer '*', 'console', (buffer) =>
           @consoleBuffer = buffer
