@@ -144,9 +144,10 @@ class Engine
     return message
 
   prepareMessage: (message) ->
-    message.time      = Date.now() unless message.time
-    message.highlight = false      unless message.highlight
-    message.eid       = -1         unless message.eid
+    now = parseInt(Date.now() / 1000)
+    message.time      = now   unless message.time
+    message.highlight = false unless message.highlight
+    message.eid       = -1    unless message.eid
     return message
 
   addConnection: (options) ->
