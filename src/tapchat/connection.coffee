@@ -453,7 +453,8 @@ class Connection extends EventEmitter
         else
           over()
       else
-        @getOrCreateBuffer nick, Buffer::TYPE_QUERY, (buffer) =>
+        bufferName = if nick == @getNick() then to else nick
+        @getOrCreateBuffer bufferName, Buffer::TYPE_QUERY, (buffer) =>
           buffer.addEvent
             type:      'buffer_msg'
             from:      nick
