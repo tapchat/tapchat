@@ -248,7 +248,7 @@ class Engine
         return
 
       # No message, so just open the buffer.
-      conn.getOrCreateBuffer to, Buffer::TYPE_QUERY, (buffer, created) ->
+      conn.getOrCreateBuffer to, 'conversation', (buffer, created) ->
         callback
           name: to
           cid:  conn.id

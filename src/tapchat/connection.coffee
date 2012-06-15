@@ -28,7 +28,9 @@ _ = require('underscore')
 CoffeeScript = require 'coffee-script'
 {starts, ends, compact, count, merge, extend, flatten, del, last} = CoffeeScript.helpers
 
-Buffer = require('./buffer')
+ConsoleBuffer      = require('./console_buffer')
+ChannelBuffer      = require('./channel_buffer')
+ConversationBuffer = require('./conversation_buffer')
 B = require('./message_builder')
 
 class Connection extends EventEmitter
@@ -60,7 +62,9 @@ class Connection extends EventEmitter
     @engine.db.selectBuffers @id, (buffers) =>
       for bufferInfo in buffers
         buffer = @addBuffer bufferInfo
-        @consoleBuffer = buffer if buffer.type == 'console'
+        if buffer instanceof ConsoleBuffer
+          @consoleBuffer = buffer
+          break
       unless @consoleBuffer
         @createBuffer '*', 'console', (buffer) =>
           @consoleBuffer = buffer
@@ -103,7 +107,14 @@ class Connection extends EventEmitter
     @client.part(chan)
 
   addBuffer: (bufferInfo) =>
-    buffer = new Buffer(this, bufferInfo)
+    if bufferInfo.type == 'console'
+      buffer = new ConsoleBuffer(this, bufferInfo)
+    else if bufferInfo.type == 'channel'
+      buffer = new ChannelBuffer(this, bufferInfo)
+    else if bufferInfo.type == 'conversation'
+      buffer = new ConversationBuffer(this, bufferInfo)
+    else
+      throw "Unknown buffer type: #{bufferInfo.type}"
     @buffers.push(buffer)
     buffer.on 'event', (event) =>
       @emit('event', event)
@@ -135,7 +146,7 @@ class Connection extends EventEmitter
         bufferQueue.perform (bufferOver) =>
           send B.makeBuffer(buffer)
 
-          if buffer.type == 'channel' and buffer.isJoined
+          if buffer instanceof ChannelBuffer and buffer.isJoined
             send B.channelInit(buffer)
 
           buffer.getBacklog (events) =>
@@ -283,7 +294,7 @@ class Connection extends EventEmitter
         over
 
     close: (over) ->
-      buffer.setJoined(false) for buffer in @buffers when buffer.type == 'channel'
+      buffer.setJoined(false) for buffer in @buffers when buffer instanceof ChannelBuffer
       @addEventToAllBuffers
         type: 'socket_closed',
         over
@@ -302,7 +313,7 @@ class Connection extends EventEmitter
 
       for buffer in @buffers
         # FIXME: Just use isArchived to indicate if should autojoin and remove that column
-        @client.join(buffer.name) if buffer.type == 'channel' && (!buffer.isArchived) && buffer.autoJoin
+        @client.join(buffer.name) if buffer instanceof ChannelBuffer && (!buffer.isArchived) && buffer.autoJoin
 
     motd: (motd, over) ->
       @consoleBuffer.addEvent B.serverMotd(this, motd),
@@ -341,7 +352,7 @@ class Connection extends EventEmitter
         over()
 
     selfJoin: (channel, message, over) ->
-      @getOrCreateBuffer channel, Buffer::TYPE_CHANNEL, (buffer) =>
+      @getOrCreateBuffer channel, 'channel', (buffer) =>
         buffer.addMember(@getNick())
         buffer.setJoined(true)
         buffer.addEvent
@@ -383,7 +394,7 @@ class Connection extends EventEmitter
         over()
 
     selfQuit: (reason, over) ->
-      buffer.setJoined(false) for buffer in @buffers when buffer.type == 'channel'
+      buffer.setJoined(false) for buffer in @buffers when buffer.type instanceof ChannelBuffer
       @addEventToAllBuffers
         type: 'quit_server'
         msg:  reason,
@@ -434,7 +445,7 @@ class Connection extends EventEmitter
         else
           over()
       else
-        @getOrCreateBuffer to, Buffer::TYPE_QUERY, (buffer) =>
+        @getOrCreateBuffer to, 'conversation', (buffer) =>
           buffer.addEvent
             type:      'buffer_msg'
             from:      @getNick()
@@ -459,7 +470,7 @@ class Connection extends EventEmitter
           over()
       else
         bufferName = if nick == @getNick() then to else nick
-        @getOrCreateBuffer bufferName, Buffer::TYPE_QUERY, (buffer) =>
+        @getOrCreateBuffer bufferName, 'conversation', (buffer) =>
           buffer.addEvent
             type:      'buffer_msg'
             from:      nick

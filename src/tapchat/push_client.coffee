@@ -2,6 +2,10 @@ Crypto  = require('crypto')
 Request = require('request')
 Base64  = require('../base64')
 
+ConsoleBuffer      = require('./console_buffer')
+ChannelBuffer      = require('./channel_buffer')
+ConversationBuffer = require('./conversation_buffer')
+
 NOTIFY_URL = 'https://tapchat.heroku.com/notify'
 
 class PushClient
@@ -26,7 +30,7 @@ class PushClient
     title = buffer.name
 
     text = null
-    if buffer.type == 'channel'
+    if buffer instanceof ChannelBuffer
       text = "<#{message.from}> #{message.msg}"
     else
       text = message.msg

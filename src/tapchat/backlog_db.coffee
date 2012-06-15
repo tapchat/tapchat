@@ -106,10 +106,7 @@ class BacklogDB
     isSSL = if (!!Number(options.ssl)) then 1 else 0
     sql.set 'is_ssl', isSSL
 
-    if options.server_pass
-      sql.set 'server_pass', options.server_pass
-    else
-      sql.set 'server_pass', null
+    sql.set 'server_pass', options.server_pass ? null
 
     @db.run sql.toString(),
       $cid: cid,

@@ -31,17 +31,11 @@ class Buffer extends EventEmitter
     @connection  = connection
     @id          = info.bid
     @name        = info.name
-    @type        = info.type
-    @autoJoin    = info.auto_join
     @lastSeenEid = info.last_seen_eid
-    @isArchived  = !!info.archived
-
-    @members = {}
 
     throw 'buffer: missing connection' unless @connection
     throw 'buffer: missing id'         unless @id
     throw 'buffer: missing name'       unless @name
-    throw 'buffer: missing type'       unless @type
 
   getBacklog: (callback) ->
     @connection.engine.db.selectEvents @id, (rows) ->
@@ -61,63 +55,9 @@ class Buffer extends EventEmitter
       @emit 'event', event
       callback(event) if callback
 
-  setMembers: (nicks) ->
-    @members = {}
-    @addMember(nick) for nick in nicks
-
-  addMember: (nick) ->
-    @members[nick] =
-      nick:     nick
-      realName: '' # FIXME
-      host:     '' # FIXME
-
-  renameMember: (oldNick, newNick) ->
-    @removeMember(oldNick)
-    @addMember(newNick)
-
-  removeMember: (nick) ->
-    delete @members[nick]
-
-  setJoined: (joined) ->
-    @isJoined = joined
-    @members = {} unless joined
-
   setLastSeenEid: (eid, callback) ->
     @connection.engine.db.setBufferLastSeenEid @connection.id, @id, eid, =>
       @lastSeenEid = eid
       callback()
-
-  # FIXME: setName: (name) ->
-  # @connection.engine.db.updateBuffer { name: name } @id, =>
-  #   @name = name
-
-  archive: (callback) ->
-    return callback() if @isJoined
-    @connection.engine.db.setBufferArchived @connection.id, @id, true,  =>
-      @isArchived = true
-      @connection.engine.broadcast
-        type: 'buffer_archived'
-        cid:  @connection.id
-        bid:  @id,
-        callback
-
-  unarchive: (callback) ->
-    @connection.engine.db.setBufferArchived @connection.id, @id, false, =>
-      @isArchived = false
-      @connection.engine.broadcast
-        type: 'buffer_unarchived'
-        cid:  @connection.id
-        bid:  @id,
-        callback
-
-  delete: (callback) ->
-    return callback() if @isJoined
-    @connection.engine.db.deleteBuffer @connection.id, @id, =>
-      @connection.removeBuffer(this, callback)
-
-# FIXME: Better way to handle consts in coffeescript?
-Buffer.prototype.TYPE_CONSOLE = 'console'
-Buffer.prototype.TYPE_CHANNEL = 'channel'
-Buffer.prototype.TYPE_QUERY   = 'conversation'
 
 module.exports = Buffer

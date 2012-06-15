@@ -18,6 +18,10 @@
 # You should have received a copy of the GNU General Public License
 # along with TapChat.  If not, see <http://www.gnu.org/licenses/>.
 
+ConsoleBuffer      = require('./console_buffer')
+ChannelBuffer      = require('./channel_buffer')
+ConversationBuffer = require('./conversation_buffer')
+
 CoffeeScript = require 'coffee-script'
 {starts, ends, compact, count, merge, extend, flatten, del, last} = CoffeeScript.helpers
 _ = require('underscore')
@@ -58,7 +62,7 @@ module.exports =
       archived:    buffer.isArchived
 
     msg.last_seen_eid = buffer.lastSeenEid if buffer.lastSeenEid
-    msg.joined = buffer.isJoined if buffer.type == 'channel'
+    msg.joined = buffer.isJoined if buffer instanceof ChannelBuffer
     return msg
 
   channelInit: (buffer) ->
