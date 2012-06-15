@@ -252,6 +252,11 @@ class Connection extends EventEmitter
       do (signalName, signalHandler) =>
         @client.addListener signalName, (args...) =>
           handler = =>
+            whitelist = [ 'connecting', 'close', 'abort', 'netError', 'error', 'raw' ]
+            if @isDisconnected() && (!_.include(whitelist, signalName))
+              console.log 'Disconnected before event handler ran!', @id, @name, signalName
+              return _.last(arguments)()
+
             #console.log 'STARTING HANDLER FOR ', signalName
             signalHandler.apply(this, arguments)
 
