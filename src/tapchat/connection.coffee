@@ -443,13 +443,14 @@ class Connection extends EventEmitter
           over()
       else
         @getOrCreateBuffer to, 'conversation', (buffer) =>
-          buffer.addEvent
-            type:      'buffer_msg'
-            from:      @getNick()
-            msg:       text
-            highlight: false
-            self:      true,
-            over
+          buffer.unarchive =>
+            buffer.addEvent
+              type:      'buffer_msg'
+              from:      @getNick()
+              msg:       text
+              highlight: false
+              self:      true,
+              over
 
     message: (nick, to, text, message, over) ->
       if to.match(/^[&#]/)
@@ -468,13 +469,14 @@ class Connection extends EventEmitter
       else
         bufferName = if nick == @getNick() then to else nick
         @getOrCreateBuffer bufferName, 'conversation', (buffer) =>
-          buffer.addEvent
-            type:      'buffer_msg'
-            from:      nick
-            msg:       text
-            highlight: true
-            self:      false,
-            over
+          buffer.unarchive =>
+            buffer.addEvent
+              type:      'buffer_msg'
+              from:      nick
+              msg:       text
+              highlight: true
+              self:      false,
+              over
 
     action: (from, to, text, over) ->
       isChannel = to.match(/^[&#]/)
