@@ -116,11 +116,17 @@ class BacklogDB
           callback(row)
 
   deleteConnection: (cid, callback) ->
-    # FIXME: Also delete all buffers and events!
-    @db.run "DELETE FROM connections WHERE cid = $cid", $cid: cid, (err) ->
-      throw err if err
-      throw "Didn't find connection" unless @changes
-      callback()
+    params =
+      $cid: cid
+
+    @db.serialize =>
+      @db.run 'BEGIN TRANSACTION'
+      @db.run 'DELETE FROM events      WHERE bid IN (SELECT bid FROM buffers WHERE cid = $cid)', params
+      @db.run 'DELETE FROM buffers     WHERE cid = $cid', params
+      @db.run 'DELETE FROM connections WHERE cid = $cid', params
+      @db.run 'COMMIT', (err) =>
+        throw err if err
+        callback()
 
   insertBuffer: (cid, name, type, callback) ->
     autoJoin = (type == 'channel')
@@ -138,11 +144,14 @@ class BacklogDB
           type: type
 
   deleteBuffer: (cid, bid, callback) ->
-    # FIXME: Also delete all events!
-    @db.run 'DELETE FROM buffers WHERE cid = $cid AND bid = $bid',
-      $cid: cid
-      $bid: bid,
-      (err) ->
+    @db.serialize =>
+      @db.run 'BEGIN TRANSACTION'
+      @db.run 'DELETE FROM events WHERE bid = $bid',
+        $bid: bid
+      @db.run 'DELETE FROM buffers WHERE cid = $cid AND bid = $bid',
+        $cid: cid
+        $bid: bid
+      @db.run 'COMMIT', (err) =>
         throw err if err
         callback()
 
