@@ -404,7 +404,7 @@ class Connection extends EventEmitter
         do (name) =>
           queue.perform (bufferOver) =>
             if buffer = @getBuffer(name)
-              buffer.removeMember(nick)
+              buffer.removeMember(nick) if buffer instanceof ChannelBuffer
               buffer.addEvent
                 type: 'quit'
                 nick: nick
