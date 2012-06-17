@@ -8,14 +8,19 @@ var lib = path.join(path.dirname(fs.realpathSync(__filename)), '..', 'lib', 'tap
 
 var Config = require(path.join(lib, 'config'));
 var Engine = require(path.join(lib, 'engine'));
+var Log    = require(path.join(lib, 'log'));
 
 program
-  .version(Config.getAppVersion())
+  .version(Config.getAppVersion());
 
 program
   .command('start')
   .option('-f, --foreground', 'run in foreground')
+  .option('-v, --verbose', 'enable verbose logging')
   .action(function (cmd) {
+    if (cmd.verbose) {
+      Log.setLevel('silly');
+    }
     Config.load(function (config) {
       new Engine(config, function (engine) {
         if (!cmd.foreground) {
@@ -48,4 +53,5 @@ program
       }
     }
   });
+
 program.parse(process.argv);

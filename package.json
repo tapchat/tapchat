@@ -1,5 +1,6 @@
 {
   "name": "tapchat",
+  "preferGlobal": "true",
   "version": "0.0.14",
   "author": {
     "name": "Eric Butler",

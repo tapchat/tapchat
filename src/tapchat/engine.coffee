@@ -32,6 +32,7 @@ Daemon       = require('daemon')
 _            = require 'underscore'
 DataBuffer   = require('buffer').Buffer
 
+Log        = require './log'
 Base64     = require '../base64'
 Config     = require './config'
 B          = require './message_builder'
@@ -67,7 +68,7 @@ class Engine
     pidfile = Config.getPidFile()
 
     @pid = Daemon.daemonize(logfile, pidfile)
-    console.log('Daemon started successfully with pid:', @pid);
+    Log.info "Daemon started successfully with pid: #{@pid}}"
 
   startServer: (port, callback) ->
     @app = Express.createServer
@@ -88,12 +89,12 @@ class Engine
     @app.addListener 'upgrade', (request, socket, head) =>
       query = Url.parse(request.url, true).query
       unless PasswordHash.verify(query.password, @password)
-        console.log 'bad password'
+        Log.info 'bad password'
         request.socket.end('HTTP/1.1 403 Bad password\r\n\r\n')
         return
 
       ws = new WebSocket(request, socket, head)
-      console.log 'websocket client: connected'
+      Log.info 'websocket client: connected'
       @addClient(ws)
 
     @app.listen port, =>
@@ -108,10 +109,10 @@ class Engine
       message = JSON.parse(event.data)
 
       unless message._reqid
-        console.log 'Missing _reqid, ignoring message', event.data
+        Log.error 'Missing _reqid, ignoring message', event.data
         return
 
-      console.log 'Got message:', event.data
+      Log.silly 'Got message:', event.data
 
       callback = (reply) =>
         @send client,
@@ -122,13 +123,17 @@ class Engine
         try
           handler.apply(this, [ client, message, callback ])
         catch error
-          console.log "Error handling message", error, event.data, error.stack
+          Log.error "Error handling message",
+            message: event.data
+            error: error.stack
           client.close()
       else
-        console.log "No handler for #{message._method}"
+        Log.warn "No handler for #{message._method}"
 
     client.onclose = (event) =>
-      console.log 'websocket client: disconnected', event.code, event.reason
+      Log.info 'websocket client: disconnected',
+        code: event.code,
+        reason: event.reason
       index = @clients.indexOf(client)
       @clients.splice(index, 1)
 
@@ -136,9 +141,10 @@ class Engine
 
   send: (client, message, cb) ->
     message = @prepareMessage(message)
-    #console.log 'CLIENT SEND:', JSON.stringify(message)
+    json = JSON.stringify(message)
+    Log.silly 'CLIENT SEND:', json
     client.sendQueue.perform (over) =>
-      client.send JSON.stringify(message),
+      client.send json,
         cb() if cb
         over()
     return message
@@ -172,7 +178,7 @@ class Engine
   broadcast: (message, cb) ->
     queue = new WorkingQueue(@clients.length + 1)
 
-    #console.log 'BROADCAST', JSON.stringify(message)
+    Log.silly 'BROADCAST', JSON.stringify(message)
     unless message.is_backlog
       if message.highlight
         queue.perform (over) =>

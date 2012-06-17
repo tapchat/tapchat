@@ -2,9 +2,10 @@ Crypto  = require('crypto')
 Request = require('request')
 Base64  = require('../base64')
 
-ConsoleBuffer      = require('./console_buffer')
-ChannelBuffer      = require('./channel_buffer')
-ConversationBuffer = require('./conversation_buffer')
+Log                = require './log'
+ConsoleBuffer      = require './console_buffer'
+ChannelBuffer      = require './channel_buffer'
+ConversationBuffer = require './conversation_buffer'
 
 NOTIFY_URL = 'https://tapchat.heroku.com/notify'
 
@@ -25,8 +26,6 @@ class PushClient
     #    return;
     #}
 
-    console.log 'Sending push notification:', message
-
     title = buffer.name
 
     text = null
@@ -41,10 +40,14 @@ class PushClient
       cid:   message.cid
       bid:   message.bid
 
+    json = JSON.stringify(info)
+
+    Log.info "Sending push notification: #{json}"
+
     # Push notifications go to the TapChat server, then to UrbanAirship,
     # then to Google (C2DM). None of these people need to know what you're
     # saying.
-    [ iv, ciphertext ] = @encrypt(@engine.pushKey, JSON.stringify(info))
+    [ iv, ciphertext ] = @encrypt(@engine.pushKey, json)
 
     body =
       id:      @engine.pushId
@@ -56,7 +59,7 @@ class PushClient
       form: body,
       (err, response, body) =>
         unless response.statusCode.toString().match(/^2/)
-          console.log("Error sending push notification: #{response.statusCode}")
+          Log.error("Error sending push notification: #{response.statusCode}")
         callback() if callback
 
   encrypt: (key, msg) ->

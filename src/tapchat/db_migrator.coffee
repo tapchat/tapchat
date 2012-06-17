@@ -3,6 +3,7 @@
 Path         = require('path')
 Fs           = require('fs')
 WorkingQueue = require('capisce').WorkingQueue
+Log          = require('./log')
 
 class DBMigrator
   constructor: (properties) ->
@@ -30,7 +31,7 @@ class DBMigrator
     queue.doneAddingJobs()
 
   runMigration: (version, callback) ->
-    console.log 'Running migration', version
+    Log.info "Running migration: #{version}"
 
     file = Path.join(@dir, "schema_#{version}_up.sql")
     sql  = Fs.readFileSync(file).toString()

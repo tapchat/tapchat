@@ -28,6 +28,7 @@ _ = require('underscore')
 CoffeeScript = require 'coffee-script'
 {starts, ends, compact, count, merge, extend, flatten, del, last} = CoffeeScript.helpers
 
+Log                = require('./log')
 ConsoleBuffer      = require('./console_buffer')
 ChannelBuffer      = require('./channel_buffer')
 ConversationBuffer = require('./conversation_buffer')
@@ -55,7 +56,6 @@ class Connection extends EventEmitter
       realName:    options.real_name
       password:    options.server_pass
       autoConnect: false
-      debug:       true
 
     @addEventListeners()
 
@@ -161,11 +161,12 @@ class Connection extends EventEmitter
       # FIXME: This is an awful hack. It should really be included in the 'make_server' message.
       if @isConnecting()
         send(merge(B.connecting(this), bid: buffer.id)) for buffer in @buffers
+
+      queue.whenDone => callback()
       queue.doneAddingJobs()
 
     bufferQueue.doneAddingJobs()
 
-    queue.whenDone => callback()
 
   edit: (options, callback) ->
     @engine.db.updateConnection @id, options, (row) =>
@@ -263,15 +264,17 @@ class Connection extends EventEmitter
           handler = =>
             whitelist = [ 'connecting', 'close', 'abort', 'netError', 'error', 'raw' ]
             if @isDisconnected() && (!_.include(whitelist, signalName))
-              console.log 'Disconnected before event handler ran!', @id, @name, signalName
+              Log.warn 'Disconnected before event handler ran!',
+                connId:   @id,
+                connName: @name,
+                signal:   signalName
               return _.last(arguments)()
-
-            #console.log 'STARTING HANDLER FOR ', signalName
+            #Log.silly "Starting event handler for: #{signalName}"
             signalHandler.apply(this, arguments)
 
           @queue.perform (over) ->
             overWrapper = =>
-              #console.log 'DONE WITH HANDLER FOR ', signalName
+              #Log.silly "Done with event handler for: #{signalName}"
               over()
             args.push(overWrapper)
             handler args...
@@ -550,11 +553,11 @@ class Connection extends EventEmitter
         over
 
     raw: (message, over) ->
-      console.log "IRC RECV: #{@getName()} #{JSON.stringify(message)}"
+      Log.silly "IRC RECV: #{@getName()} #{JSON.stringify(message)}"
       over()
 
     netError: (ex, over) ->
-      console.log 'Net error: ', ex
+      Log.error 'Net error: ', ex.stack
       @consoleBuffer.addEvent
         type: 'error'
         msg: ex,
@@ -563,7 +566,7 @@ class Connection extends EventEmitter
           over()
 
     error: (error, over) ->
-      console.log 'Error: ', error
+      Log.error 'Error: ', error.stack
       @consoleBuffer.addEvent
         type: 'error',
         msg: error.args.join(' '), =>
