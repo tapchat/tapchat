@@ -262,7 +262,7 @@ class Connection extends EventEmitter
       do (signalName, signalHandler) =>
         @client.addListener signalName, (args...) =>
           handler = =>
-            whitelist = [ 'connecting', 'close', 'abort', 'netError', 'error', 'raw' ]
+            whitelist = [ 'connecting', 'close', 'abort', 'netError', 'error', 'recvLine' ]
             if @isDisconnected() && (!_.include(whitelist, signalName))
               Log.warn 'Disconnected before event handler ran!',
                 connId:   @id,
@@ -552,12 +552,16 @@ class Connection extends EventEmitter
         from:    from,
         over
 
-    raw: (message, over) ->
-      Log.silly "IRC RECV: #{@getName()} #{JSON.stringify(message)}"
+    sendLine: (message, over) ->
+      Log.silly "IRC SEND [#{@getName()}]: #{message}"
+      over()
+
+    recvLine: (message, over) ->
+      Log.silly "IRC RECV [#{@getName()}]: #{message}"
       over()
 
     netError: (ex, over) ->
-      Log.error 'Net error: ', ex.stack
+      Log.error "Net error [#{@getName()}]: #{ex.stack}"
       @consoleBuffer.addEvent
         type: 'error'
         msg: ex,
@@ -566,7 +570,7 @@ class Connection extends EventEmitter
           over()
 
     error: (error, over) ->
-      Log.error 'Error: ', error.stack
+      Log.error "Error [#{@getName()}]: #{ex.stack}"
       @consoleBuffer.addEvent
         type: 'error',
         msg: error.args.join(' '), =>
