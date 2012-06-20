@@ -34,6 +34,7 @@ Daemon        = require('daemon')
 Crypto        = require('crypto')
 _             = require 'underscore'
 DataBuffer    = require('buffer').Buffer
+Gzippo        = require('gzippo')
 
 Log          = require './log'
 Base64       = require '../base64'
@@ -87,6 +88,7 @@ class Engine
       cert: Fs.readFileSync(Config.getCertFile())
 
     # @app.use(Express.logger()) # FIXME: Only if verbose
+    @app.use(Gzippo.compress())
     @app.use(Express.cookieParser())
     @app.use(Express.bodyParser())
     @app.use(Express.methodOverride())
@@ -102,7 +104,7 @@ class Engine
         num_clients:     @clients.length
         num_connections: @connections.length
 
-    @app.post '/login', (req, res, next) =>
+    @app.post '/login', (req, res) =>
       req.body.username = 'ignore' # No usernames yet
       auth = Passport.authenticate 'local', (err, user, info) =>
         return next(err) if err
@@ -111,8 +113,7 @@ class Engine
           response =
             success: false
             message: info.message
-          res.writeHead(401, 'Content-Type': 'application/json')
-          res.end(JSON.stringify(response))
+          res.json response, 401
 
         if user
           sessionId = Crypto.randomBytes(32).toString('hex')
@@ -120,15 +121,27 @@ class Engine
           response =
             success: true
             session: sessionId
-          res.writeHead(200, 'Content-Type': 'application/json')
-          res.end(JSON.stringify(response))
+          res.json response
 
-      auth(req, res, next)
+      auth(req, res)
+
+    @app.get '/chat/backlog', (req, res) =>
+      unless @sessions.get(req.cookies.session)
+        req.socket.end('HTTP/1.1 401 Unauthorized\r\n\r\n');
+        return next()
+
+      events = []
+
+      @getBacklog ((event) =>
+        events.push(@prepareMessage(event))
+      ), ->
+        res.json(events)
 
     @app.addListener 'upgrade', (request, socket, head) =>
       request.method = 'UPGRADE' # Prevent any matching GET handlers from running
       res = new Http.ServerResponse(request)
       @app.handle request, res, =>
+        @inbandBacklog = request.param('inband', false)
         if @sessions.get(request.cookies.session)
           ws = new WebSocket(request, socket, head)
           Log.info 'websocket client: connected'
@@ -177,7 +190,20 @@ class Engine
       index = @clients.indexOf(client)
       @clients.splice(index, 1)
 
-    @sendBacklog(client)
+    @send client,
+      type:          'header'
+      version:       Config.getAppVersion()
+      idle_interval: 29000 # FIXME
+      push_id:       @pushId
+      push_key:      Base64.urlEncode(@pushKey)
+
+    unless @inbandBacklog
+      # {"bid":-1,"eid":-1,"type":"oob_include","time":1340156453,"highlight":false,"url":"/chat/oob-loader?key=e82d5ead-bfbd-4a55-94c8-c145798a3520"}
+      @send client,
+        type: 'oob_include'
+        url:  '/chat/backlog'
+    else
+      @sendBacklog(client)
 
   send: (client, message, cb) ->
     message = @prepareMessage(message)
@@ -235,25 +261,23 @@ class Engine
     return message
 
   sendBacklog: (client) ->
-    queue = new WorkingQueue(1)
+    @getBacklog (event) =>
+      @send client, event
 
-    queue.perform (over) =>
-      @send client,
-        type:          'header'
-        version:       Config.getAppVersion()
-        idle_interval: 29000 # FIXME
-        push_id:       @pushId
-        push_key:      Base64.urlEncode(@pushKey)
-        over
+  getBacklog: (callback, done) ->
+    queue = new WorkingQueue(1)
 
     for conn in @connections
       do (conn) =>
         queue.perform (over) =>
-          conn.sendBacklog client, over
+          conn.getBacklog ((event) ->
+            callback event
+          ), over
 
     queue.whenDone =>
-      @send client,
+      callback
         type: 'backlog_complete'
+      done() if done
 
     queue.doneAddingJobs()
 

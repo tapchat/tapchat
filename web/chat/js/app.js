@@ -13,7 +13,7 @@ _.extend(App.prototype, Backbone.Events, {
     }
 
     var scheme  = (window.location.protocol === 'https:') ? 'wss' : 'ws';
-    var address = scheme + "://" + window.location.host + "/chat/stream";
+    var address = scheme + "://" + window.location.host + "/chat/stream?inband=true";
     console.log('Websocket address is: ' + address);
 
     this.socket = new WebSocket(address);

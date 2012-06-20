@@ -136,37 +136,41 @@ class Connection extends EventEmitter
         else
           @engine.broadcast(message, over)
 
-    send B.makeServer(this)
+    @getBacklog ((event) =>
+      # HACK: end_of_backlog not needed for a new connection (being broadcast to everyone)
+      if (event.type != 'end_of_backlog' || (event.type == 'end_of_backlog' and !client))
+        send event
+      ), ->
+        queue.whenDone => callback
+        queue.doneAddingJobs()
 
-    bufferQueue = new WorkingQueue(1)
+  getBacklog: (callback, done) ->
+    callback B.makeServer(this)
+
+    queue = new WorkingQueue(1)
     for buffer in @buffers
       do (buffer) =>
-        bufferQueue.perform (bufferOver) =>
-          send B.makeBuffer(buffer)
+        queue.perform (bufferOver) =>
+          callback B.makeBuffer(buffer)
 
           if buffer instanceof ChannelBuffer and buffer.isJoined
-            send B.channelInit(buffer)
+            callback B.channelInit(buffer)
 
           buffer.getBacklog (events) =>
-            send(event) for event in events
+            callback(event) for event in events
             bufferOver()
 
-    bufferQueue.whenDone =>
-      if client
-        # Not needed for a new connection (being broadcast to everyone)
-        send
-          type: 'end_of_backlog'
-          cid:  @id
+    queue.whenDone =>
+      callback
+        type: 'end_of_backlog'
+        cid:  @id
 
       # FIXME: This is an awful hack. It should really be included in the 'make_server' message.
       if @isConnecting()
         send(merge(B.connecting(this), bid: buffer.id)) for buffer in @buffers
 
-      queue.whenDone => callback()
-      queue.doneAddingJobs()
-
-    bufferQueue.doneAddingJobs()
-
+    queue.whenDone done
+    queue.doneAddingJobs()
 
   edit: (options, callback) ->
     @engine.db.updateConnection @id, options, (row) =>
