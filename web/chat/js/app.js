@@ -7,13 +7,13 @@ function App () {
 }
 
 _.extend(App.prototype, Backbone.Events, {
-  connect: function (password) {
+  connect: function () {
     if (this.socket) {
       return;
     }
 
     var scheme  = (window.location.protocol === 'https:') ? 'wss' : 'ws';
-    var address = scheme + "://" + window.location.host + "/chat/stream?password=" + encodeURIComponent(password);
+    var address = scheme + "://" + window.location.host + "/chat/stream";
     console.log('Websocket address is: ' + address);
 
     this.socket = new WebSocket(address);
@@ -36,6 +36,7 @@ _.extend(App.prototype, Backbone.Events, {
 
     this.socket.onerror = function() {
       console.info("Websocket error:", arguments);
+      $.cookie('session', null);
     };
   },
 

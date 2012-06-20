@@ -15,10 +15,9 @@ $(function () {
 
   Backbone.history.start();
 
-  // FIXME
-  var password = null;
-  if (password) {
-    app.connect(password);
+  var session = $.cookie('session');
+  if (session) {
+    app.connect();
   } else {
     app.view.showLoginDialog();
   }

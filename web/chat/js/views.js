@@ -113,7 +113,13 @@ var AppView = Backbone.View.extend({
           if (password.length === 0) {
             return false;
           }
-          app.connect(password);
+          $.post('/login', { username: 'user', password: password }, function (data) {
+            $.cookie('session', data.session);
+            app.connect();
+          })
+          .error(function() {
+            app.view.showLoginDialog();
+          });
           return true;
       }
     }, {

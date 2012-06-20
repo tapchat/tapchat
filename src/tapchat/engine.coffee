@@ -18,28 +18,32 @@
 # You should have received a copy of the GNU General Public License
 # along with TapChat.  If not, see <http://www.gnu.org/licenses/>.
 
-Path         = require('path')
-Fs           = require('fs')
-WorkingQueue = require('capisce').WorkingQueue
-Http         = require('http')
-Express      = require('express')
-Url          = require('url')
-WebSocket    = require('faye-websocket')
-PasswordHash = require('password-hash')
-CoffeeScript = require('coffee-script')
-Util         = require('util')
-Daemon       = require('daemon')
-_            = require 'underscore'
-DataBuffer   = require('buffer').Buffer
+Path          = require('path')
+Fs            = require('fs')
+WorkingQueue  = require('capisce').WorkingQueue
+Http          = require('http')
+Passport      = require('passport')
+LocalStrategy = require('passport-local').Strategy
+Express       = require('express')
+Url           = require('url')
+WebSocket     = require('faye-websocket')
+PasswordHash  = require('password-hash')
+CoffeeScript  = require('coffee-script')
+Util          = require('util')
+Daemon        = require('daemon')
+Crypto        = require('crypto')
+_             = require 'underscore'
+DataBuffer    = require('buffer').Buffer
 
-Log        = require './log'
-Base64     = require '../base64'
-Config     = require './config'
-B          = require './message_builder'
-Buffer     = require './buffer'
-Connection = require './connection'
-BacklogDB  = require './backlog_db'
-PushClient = require './push_client'
+Log          = require './log'
+Base64       = require '../base64'
+Config       = require './config'
+B            = require './message_builder'
+Buffer       = require './buffer'
+Connection   = require './connection'
+BacklogDB    = require './backlog_db'
+PushClient   = require './push_client'
+SessionStore = require './session_store'
 
 {starts, ends, compact, count, merge, extend, flatten, del, last} = CoffeeScript.helpers
 
@@ -71,10 +75,22 @@ class Engine
     Log.info "Daemon started successfully with pid: #{@pid}}"
 
   startServer: (port, callback) ->
+    Passport.use new LocalStrategy (username, password, done) =>
+      unless PasswordHash.verify(password, @password)
+        return done(null, false, message: 'Invalid password')
+      done(null, {})
+  
+    @sessions = new SessionStore(Path.join(Config.getDataDirectory(), 'sessions.json'))
+
     @app = Express.createServer
       key:  Fs.readFileSync(Config.getCertFile())
       cert: Fs.readFileSync(Config.getCertFile())
 
+    # @app.use(Express.logger()) # FIXME: Only if verbose
+    @app.use(Express.cookieParser())
+    @app.use(Express.bodyParser())
+    @app.use(Express.methodOverride())
+    @app.use(Passport.initialize())
     @app.use(Express.static(__dirname + '/../../web'))
 
     @app.set 'views', __dirname + '/../../web'
@@ -86,16 +102,40 @@ class Engine
         num_clients:     @clients.length
         num_connections: @connections.length
 
-    @app.addListener 'upgrade', (request, socket, head) =>
-      query = Url.parse(request.url, true).query
-      unless PasswordHash.verify(query.password, @password)
-        Log.info 'bad password'
-        request.socket.end('HTTP/1.1 403 Bad password\r\n\r\n')
-        return
+    @app.post '/login', (req, res, next) =>
+      req.body.username = 'ignore' # No usernames yet
+      auth = Passport.authenticate 'local', (err, user, info) =>
+        return next(err) if err
 
-      ws = new WebSocket(request, socket, head)
-      Log.info 'websocket client: connected'
-      @addClient(ws)
+        unless user
+          response =
+            success: false
+            message: info.message
+          res.writeHead(401, 'Content-Type': 'application/json')
+          res.end(JSON.stringify(response))
+
+        if user
+          sessionId = Crypto.randomBytes(32).toString('hex')
+          @sessions.set(sessionId, {}) # Not currently storing anything in the session
+          response =
+            success: true
+            session: sessionId
+          res.writeHead(200, 'Content-Type': 'application/json')
+          res.end(JSON.stringify(response))
+
+      auth(req, res, next)
+
+    @app.addListener 'upgrade', (request, socket, head) =>
+      request.method = 'UPGRADE' # Prevent any matching GET handlers from running
+      res = new Http.ServerResponse(request)
+      @app.handle request, res, =>
+        if @sessions.get(request.cookies.session)
+          ws = new WebSocket(request, socket, head)
+          Log.info 'websocket client: connected'
+          @addClient(ws)
+        else
+          console.log('unauthorized')
+          request.socket.end('HTTP/1.1 401 Unauthorized\r\n\r\n');
 
     @app.listen port, =>
       console.log "\nTapChat ready at https://localhost:#{port}\n"
