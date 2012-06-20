@@ -141,7 +141,7 @@ class Connection extends EventEmitter
       if (event.type != 'end_of_backlog' || (event.type == 'end_of_backlog' and !client))
         send event
       ), ->
-        queue.whenDone => callback
+        queue.whenDone callback
         queue.doneAddingJobs()
 
   getBacklog: (callback, done) ->
