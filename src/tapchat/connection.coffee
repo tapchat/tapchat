@@ -564,8 +564,8 @@ class Connection extends EventEmitter
       Log.silly "IRC RECV [#{@getName()}]: #{message}"
       over()
 
-    netError: (ex, over) ->
-      Log.error "Net error [#{@getName()}]: #{ex.stack}"
+    netError: (error, over) ->
+      Log.error "Net error [#{@getName()}]: #{error.stack}"
       @consoleBuffer.addEvent
         type: 'error'
         msg: ex,
@@ -574,7 +574,7 @@ class Connection extends EventEmitter
           over()
 
     error: (error, over) ->
-      Log.error "Error [#{@getName()}]: #{ex.stack}"
+      Log.error "Error [#{@getName()}]: #{error.stack}"
       @consoleBuffer.addEvent
         type: 'error',
         msg: error.args.join(' '), =>
