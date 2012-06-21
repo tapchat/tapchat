@@ -565,10 +565,10 @@ class Connection extends EventEmitter
       over()
 
     netError: (error, over) ->
-      Log.error "Net error [#{@getName()}]: #{error.stack}"
+      Log.error "Net error [#{@getName()}]: #{error} #{error.stack}"
       @consoleBuffer.addEvent
         type: 'error'
-        msg: ex,
+        msg: error,
         =>
           @disconnect()
           over()
