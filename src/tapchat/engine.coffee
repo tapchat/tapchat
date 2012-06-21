@@ -88,12 +88,12 @@ class Engine
       cert: Fs.readFileSync(Config.getCertFile())
 
     # @app.use(Express.logger()) # FIXME: Only if verbose
-    @app.use(Gzippo.compress())
     @app.use(Express.cookieParser())
     @app.use(Express.bodyParser())
     @app.use(Express.methodOverride())
     @app.use(Passport.initialize())
     @app.use(Express.static(__dirname + '/../../web'))
+    @app.use(Gzippo.compress())
 
     @app.set 'views', __dirname + '/../../web'
     @app.set 'view engine', 'html.eco'
