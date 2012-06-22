@@ -475,7 +475,9 @@ class Connection extends EventEmitter
         else
           over()
       else
+        # Fix for irssi-proxy mesages sent by you.
         bufferName = if nick == @getNick() then to else nick
+
         @getOrCreateBuffer bufferName, 'conversation', (buffer) =>
           buffer.unarchive =>
             buffer.addEvent
@@ -499,15 +501,33 @@ class Connection extends EventEmitter
       else
         over()
 
-    notice: (nick, to, text, message, over) ->
-      buffer = if (!nick || !to) then @consoleBuffer else @getBuffer(to)
-      if buffer
+    notice: (from, to, text, message, over) ->
+      addEvent = (buffer) =>
         buffer.addEvent
-          type: 'notice'
-          msg:  text,
+          type:   'notice'
+          msg:    text,
+          from:   from,
+          target: to,
           over
+
+      # If this is a notice from the server (Auth, etc), add to console buffer.
+      unless from
+        addEvent(@consoleBuffer)
+
       else
-        over()
+        # If this notice was sent directly to our nick, it needs to be displayed
+        # in the conversation buffer for the sender.
+        bufferName = if to == @getNick() then from else to
+
+        console.log 'bufferName:', bufferName, 'from:', from, 'to:', to
+
+        if bufferName.match(/^[&#]/)
+          # If this is a channel notice, add to an existing buffer for that channel only.
+          buffer = @getBuffer(bufferName) ? @consoleBuffer
+          addEvent(buffer)
+        else
+          # If this is notice is from a user, its OK to open a new conversation buffer.
+          @getOrCreateBuffer bufferName, 'conversation', addEvent
 
     nick: (oldnick, newnick, channels, message, over) ->
       queue = new WorkingQueue(1)
