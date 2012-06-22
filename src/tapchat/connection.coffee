@@ -242,8 +242,9 @@ class Connection extends EventEmitter
     return null
 
   getBuffer: (name) ->
+    return null unless name
     for buffer in @buffers
-      return buffer if buffer.name == name
+      return buffer if buffer.name.toLowerCase() == name.toLowerCase()
     return null
 
   getOrCreateBuffer: (name, type, callback) ->
