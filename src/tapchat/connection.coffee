@@ -285,7 +285,7 @@ class Connection extends EventEmitter
             handler args...
 
   shouldHighlight: (message) ->
-    !!message.match(@getNick())
+    message && (!!message.match(@getNick()))
 
   signalHandlers:
     connecting: (over) ->
