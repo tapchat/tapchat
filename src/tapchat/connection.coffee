@@ -590,16 +590,13 @@ class Connection extends EventEmitter
       @consoleBuffer.addEvent
         type: 'error'
         msg: error,
-        =>
-          @disconnect()
-          over()
+        over
 
     error: (error, over) ->
       Log.error "Error [#{@getName()}]: #{error.stack}"
       @consoleBuffer.addEvent
         type: 'error',
-        msg: error.args.join(' '), =>
-          @disconnect()
-          over()
+        msg: error.args.join(' '),
+        over
 
 module.exports = Connection
