@@ -130,6 +130,10 @@ var AppView = Backbone.View.extend({
     dialog.find("input[type=password]").focus();
   },
 
+  showCertDialog: function (message) {
+    new CertDialog(message).show();
+  },
+
   showError: function (text) {
     var dialog = bootbox.modal(text, "Error", {
       "animate": false,
@@ -576,6 +580,51 @@ var EditNetworkDialog = Backbone.View.extend({
 
     console.log('form', data);
     app.send(data);
+  }
+});
+
+var CertDialog = Backbone.View.extend({
+  initialize: function (attrs) {
+    this.attrs = attrs;
+  },
+
+  render: function () {
+    $(this.el).empty();
+    $(this.el).append(ich.CertDialog(this.attrs));
+    return this;
+  },
+
+  show: function () {
+    var self = this;
+    this.dialog = bootbox.dialog(this.render().el,
+      [
+        {
+          "label": "Accept",
+          "class": "btn btn-primary",
+          "callback": function () { return self.acceptCert(true); }
+        },
+        {
+          "label": "Reject",
+          "class": "btn btn-danger",
+          "callback": function() { return self.acceptCert(false); }
+        }
+      ],
+      {
+        "header": "Accept SSL Certificate?",
+        "animate": false,
+        "backdrop": "static"
+      }
+    );
+  },
+
+  acceptCert: function (accept) {
+    console.log('accept!', this.attrs);
+    app.send({
+      _method:     'accept-cert',
+      cid:         this.attrs.nid,
+      fingerprint: this.attrs.fingerprint,
+      accept:      accept
+    });
   }
 });
 

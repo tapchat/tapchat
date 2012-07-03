@@ -32,7 +32,7 @@ CoffeeScript  = require('coffee-script')
 Util          = require('util')
 Daemon        = require('daemon')
 Crypto        = require('crypto')
-_             = require 'underscore'
+_             = require('underscore')
 DataBuffer    = require('buffer').Buffer
 Gzippo        = require('gzippo')
 
@@ -376,5 +376,9 @@ class Engine
       conn = @findConnection(message.cid)
       buffer = conn.findBuffer(message.id)
       buffer.delete(callback)
+
+    'accept-cert': (client, message, callback) ->
+      conn = @findConnection(message.cid)
+      conn.acceptCert(message.fingerprint, message.accept, callback)
 
 module.exports = Engine

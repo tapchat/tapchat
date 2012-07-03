@@ -47,6 +47,8 @@ class Connection extends EventEmitter
 
     @autoConnect = !!options.auto_connect
 
+    @sslFingerprint = options.ssl_fingerprint
+
     @client = new Irc.Client options.server, options.nick,
       name:        options.name
       server:      options.server
@@ -178,6 +180,30 @@ class Connection extends EventEmitter
       @engine.broadcast(B.serverDetailsChanged(this))
       callback(row)
 
+  acceptCert: (fingerprint, accept, done) ->
+    if (!@pendingSSLCallback) || @pendingSSLFingerprint != fingerprint
+      done()
+      return
+
+    fingerpint = @pendingSSLFingerprint
+    callback   = @pendingSSLCallback
+
+    @pendingSSLFingerprint = null
+    @pendingSSLCallback    = null
+
+    unless accept
+      callback(false)
+      done()
+      return
+
+    options =
+      ssl_fingerprint: fingerprint
+
+    @engine.db.updateConnection @id, options, (row) =>
+      @sslFingerprint = fingerprint
+      callback(true)
+      done()
+
   updateAttributes: (options) ->
     serverChanged = (@getHostName() && (@getHostName() != options.server || @getPort() != options.port)) || (@isSSL() != (!!options.ssl)) || (@getServerPass() != options.server_pass)
     nickChanged   = (@getNick()     && (@getNick()     != options.nick))
@@ -267,7 +293,7 @@ class Connection extends EventEmitter
       do (signalName, signalHandler) =>
         @client.addListener signalName, (args...) =>
           handler = =>
-            whitelist = [ 'connecting', 'close', 'abort', 'netError', 'error', 'recvLine' ]
+            whitelist = [ 'connecting', 'close', 'abort', 'verifyCert', 'netError', 'error', 'recvLine' ]
             if @isDisconnected() && (!_.include(whitelist, signalName))
               Log.warn 'Disconnected before event handler ran!',
                 connId:   @id,
@@ -300,6 +326,7 @@ class Connection extends EventEmitter
         over
 
     close: (over) ->
+      @certCallbacks = {}
       buffer.setJoined(false) for buffer in @buffers when buffer instanceof ChannelBuffer
       @addEventToAllBuffers
         type: 'socket_closed',
@@ -584,6 +611,23 @@ class Connection extends EventEmitter
     recvLine: (message, over) ->
       Log.silly "IRC RECV [#{@getName()}]: #{message}"
       over()
+
+    invalidCert: (cert, error, callback, over) ->
+      if @sslFingerprint == cert.fingerprint
+        # Already accepted this certificate
+        callback(true)
+        over()
+      else
+        # Ask the user
+        @pendingSSLFingerprint = cert.fingerprint
+        @pendingSSLCallback    = callback
+        @engine.broadcast
+          cid:         @id
+          type:        'invalid_cert'
+          hostname:    @getHostName()
+          fingerprint: cert.fingerprint
+          error:       error,
+          over
 
     netError: (error, over) ->
       Log.error "Net error [#{@getName()}]: #{error} #{error.stack}"

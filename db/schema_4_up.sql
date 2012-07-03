@@ -1,0 +1,1 @@
+ALTER TABLE connections ADD COLUMN ssl_fingerprint TEXT;

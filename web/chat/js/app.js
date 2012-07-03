@@ -147,6 +147,10 @@ _.extend(App.prototype, Backbone.Events, {
 
     idle: function (message) {
       // Ignored
+    },
+
+    invalid_cert: function (message) {
+      new CertDialog(message).show();
     }
   }
 });

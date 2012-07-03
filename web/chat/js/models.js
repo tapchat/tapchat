@@ -216,6 +216,7 @@ var Network = Backbone.Model.extend({
 
   update: function (message) {
     console.log('update!', message);
+    this.set(message);
     if (this.get('disconnected')) {
       this.set('state', 'disconnected');
     } else {
