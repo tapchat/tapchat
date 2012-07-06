@@ -105,8 +105,10 @@ class BacklogDB
 
     setAttribute 'ssl_fingerprint', options.ssl_fingerprint
 
-    isSSL = if (!!Number(options.ssl)) then 1 else 0
-    setAttribute 'is_ssl', isSSL
+    if _.has(options, 'ssl')
+      # options.ssl might be a string or a number
+      isSSL = if (!!Number(options.ssl)) then 1 else 0
+      sql.set 'is_ssl', isSSL
 
     setAttribute 'server_pass', options.server_pass
 
