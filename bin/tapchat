@@ -34,7 +34,7 @@ program
   .command('stop')
   .action(function () {
     var pidFile = Config.getPidFile();
-    if (!path.existsSync(pidFile)) {
+    if (!fs.existsSync(pidFile)) {
       console.log('TapChat is not running.');
       return;
     }
