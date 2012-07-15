@@ -70,16 +70,17 @@ class BacklogDB
     throw 'realname is required' if _.isEmpty(options.realname)
     self = this
     @db.run """
-      INSERT INTO connections (name, server, port, is_ssl, nick, user_name, real_name)
-      VALUES ($name, $server, $port, $is_ssl, $nick, $user_name, $real_name)
+      INSERT INTO connections (name, server, port, is_ssl, nick, user_name, real_name, server_pass)
+      VALUES ($name, $server, $port, $is_ssl, $nick, $user_name, $real_name, $server_pass)
       """,
-      $name:      options.hostname # FIXME
-      $server:    options.hostname
-      $port:      options.port
-      $nick:      options.nickname
-      $user_name: options.nickname # FIXME
-      $real_name: options.realname
-      $is_ssl:    options.ssl || false,
+      $name:        options.name ? options.hostname
+      $server:      options.hostname
+      $port:        options.port
+      $nick:        options.nickname
+      $user_name:   options.nickname # FIXME
+      $real_name:   options.realname
+      $server_pass: options.server_pass
+      $is_ssl:      options.ssl || false,
       (err) ->
         throw err if err
         self.selectConnection @lastID, (row) ->
