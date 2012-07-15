@@ -23,7 +23,14 @@ program
       Log.setLevel('silly');
     }
 
-    if (!cmd.foreground) {
+    Config.load(function (config) {
+      if (cmd.foreground) {
+        Config.load(function (config) {
+          new Engine(config);
+        });
+        return;
+      }
+
       var pidFile = Config.getPidFile();
       if (fs.existsSync(pidFile)) {
         console.log('TapChat is already running.');
@@ -47,12 +54,7 @@ program
       child.unref();
 
       Log.info('Daemon started successfully with pid: ' + child.pid);
-
-    } else {
-      Config.load(function (config) {
-        new Engine(config);
-      });
-    }
+    });
   });
 
 program

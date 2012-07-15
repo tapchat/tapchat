@@ -86,7 +86,7 @@ Config =
 
   generateCert: (callback) ->
     certFile = Config.getCertFile()
-    Path.exists certFile, (exists) =>
+    Fs.exists certFile, (exists) =>
       unless exists
         console.log '\nGenerating SSL certificate (this may take a minute)...'
         cmd = "openssl req -new -x509 -days 10000 -nodes -out '#{certFile}' -keyout '#{certFile}' -subj '/CN=tapchat'"
@@ -105,7 +105,7 @@ Config =
       callback(stdout.replace(/^SHA1 Fingerprint=/, ''))
 
   readConfig: (callback) ->
-    Path.exists Config.getConfigFile(), (exists) =>
+    Fs.exists Config.getConfigFile(), (exists) =>
       if exists
         Fs.readFile Config.getConfigFile(), (err, data) =>
           throw err if err

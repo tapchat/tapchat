@@ -1,10 +1,9 @@
-Path = require 'path'
-Fs   = require 'fs'
+Fs = require 'fs'
 
 class SessionStore
   constructor: (fileName) ->
     @fileName = fileName
-    if Path.existsSync(@fileName)
+    if Fs.existsSync(@fileName)
       @sessions = JSON.parse(Fs.readFileSync(@fileName).toString())
     else
       @sessions = {}
