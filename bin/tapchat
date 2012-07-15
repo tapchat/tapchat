@@ -3,6 +3,7 @@
 var path    = require('path');
 var fs      = require('fs');
 var program = require('commander');
+var spawn   = require('child_process').spawn;
 
 var lib = path.join(path.dirname(fs.realpathSync(__filename)), '..', 'lib', 'tapchat');
 
@@ -21,20 +22,44 @@ program
     if (cmd.verbose) {
       Log.setLevel('silly');
     }
-    Config.load(function (config) {
-      new Engine(config, function (engine) {
-        if (!cmd.foreground) {
-          engine.daemonize();
-        }
+
+    if (!cmd.foreground) {
+      var pidFile = Config.getPidFile();
+      if (fs.existsSync(pidFile)) {
+        console.log('TapChat is already running.');
+        return;
+      }
+
+      var args = process.argv;
+      args.push('-f');
+
+      var node = args.shift(1);
+
+      var out = fs.openSync(Config.getLogFile(), 'a');
+      var err = fs.openSync(Config.getLogFile(), 'a');
+      var child = spawn(node, args, {
+        detached: true,
+        stdio: [ 'ignore', out, err ]
       });
-    });
+
+      fs.writeFileSync(Config.getPidFile(), child.pid);
+
+      child.unref();
+
+      Log.info('Daemon started successfully with pid: ' + child.pid);
+
+    } else {
+      Config.load(function (config) {
+        new Engine(config);
+      });
+    }
   });
 
 program
   .command('stop')
   .action(function () {
     var pidFile = Config.getPidFile();
-    if (!path.existsSync(pidFile)) {
+    if (!fs.existsSync(pidFile)) {
       console.log('TapChat is not running.');
       return;
     }

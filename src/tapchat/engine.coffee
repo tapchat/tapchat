@@ -30,7 +30,6 @@ WebSocket     = require('faye-websocket')
 PasswordHash  = require('password-hash')
 CoffeeScript  = require('coffee-script')
 Util          = require('util')
-Daemon        = require('daemon')
 Crypto        = require('crypto')
 _             = require('underscore')
 DataBuffer    = require('buffer').Buffer
@@ -67,13 +66,6 @@ class Engine
 
       @db.selectConnections (conns) =>
         @addConnection connInfo for connInfo in conns
-
-  daemonize: ->
-    logfile = Config.getLogFile()
-    pidfile = Config.getPidFile()
-
-    @pid = Daemon.daemonize(logfile, pidfile)
-    Log.info "Daemon started successfully with pid: #{@pid}}"
 
   startServer: (port, callback) ->
     Passport.use new LocalStrategy (username, password, done) =>

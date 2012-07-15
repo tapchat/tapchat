@@ -1,7 +1,7 @@
 {
   "name": "tapchat",
   "preferGlobal": "true",
-  "version": "0.0.27",
+  "version": "0.0.28",
   "author": {
     "name": "Eric Butler",
     "email": "eric@codebutler.com"
@@ -33,7 +33,6 @@
     "squel": "1.0.3",
     "express": "2.5.11",
     "password-hash": "1.2.0",
-    "daemon": "0.5.1",
     "mkdirp": "0.3.3",
     "commander": "1.0.0",
     "eco": "1.1.0-rc-3",
