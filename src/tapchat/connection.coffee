@@ -169,7 +169,7 @@ class Connection extends EventEmitter
 
       # FIXME: This is an awful hack. It should really be included in the 'make_server' message.
       if @isConnecting()
-        send(merge(B.connecting(this), bid: buffer.id)) for buffer in @buffers
+        callback(merge(B.connecting(this), bid: buffer.id)) for buffer in @buffers
 
     queue.whenDone done
     queue.doneAddingJobs()
