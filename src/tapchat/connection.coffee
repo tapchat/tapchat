@@ -254,7 +254,7 @@ class Connection extends EventEmitter
     (@client.conn == null || @client.conn.readyState != 'open')
 
   isConnecting: ->
-    (@client.conn != null && @client.conn.readyState == 'opening')
+    ((@client.conn != null) && ((@client.conn.readyState == 'opening') || (@client.conn.readyState == 'open' && (!@isRegistered))))
 
   isSSL: ->
     @client.opt.secure
@@ -327,6 +327,7 @@ class Connection extends EventEmitter
 
     close: (over) ->
       @certCallbacks = {}
+      @isRegistered = false
       buffer.setJoined(false) for buffer in @buffers when buffer instanceof ChannelBuffer
       @addEventToAllBuffers
         type: 'socket_closed',
@@ -340,6 +341,8 @@ class Connection extends EventEmitter
         over
 
     registered: (message, over) ->
+      @isRegistered = true
+
       @addEventToAllBuffers
         type: 'connecting_finished',
         over
