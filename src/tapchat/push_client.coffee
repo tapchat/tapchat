@@ -58,7 +58,11 @@ class PushClient
       url: NOTIFY_URL
       form: body,
       (err, response, body) =>
-        unless response.statusCode.toString().match(/^2/)
+        if err
+          Log.error("Error sending push notification: #{err}")
+        else if !response?
+          Log.error("Error sending push notification (no response)")
+        else if !response.statusCode.toString().match(/^2/)
           Log.error("Error sending push notification: #{response.statusCode}")
         callback() if callback
 
