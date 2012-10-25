@@ -524,6 +524,7 @@ class Connection extends EventEmitter
       else
         # Fix for irssi-proxy mesages sent by you.
         bufferName = if nick == @getNick() then to else nick
+        highlight  = (nick != @getNick())
 
         @getOrCreateBuffer bufferName, 'conversation', (buffer) =>
           buffer.unarchive =>
@@ -531,7 +532,7 @@ class Connection extends EventEmitter
               type:      'buffer_msg'
               from:      nick
               msg:       text
-              highlight: true
+              highlight: highlight
               self:      false,
               over
 
