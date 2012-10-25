@@ -184,7 +184,8 @@ class Engine
 
     @send client,
       type:          'header'
-      version:       Config.getAppVersion()
+      version_name:  Config.getAppVersion()
+      version_code:  Config.getAppVersionCode()
       idle_interval: 29000 # FIXME
       push_id:       @pushId
       push_key:      Base64.urlEncode(@pushKey)

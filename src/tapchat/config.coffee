@@ -32,6 +32,9 @@ Config =
   getAppVersion: ->
     JSON.parse(Fs.readFileSync(__dirname + "/../../package.json")).version;
 
+  getAppVersionCode: ->
+    JSON.parse(Fs.readFileSync(__dirname + "/../../package.json")).versionCode;
+
   getDataDirectory: ->
     home = process.env['HOME']
     if process.platform == 'darwin'
