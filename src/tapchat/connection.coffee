@@ -357,7 +357,6 @@ class Connection extends EventEmitter
         over
 
       for buffer in @buffers
-        # FIXME: Just use isArchived to indicate if should autojoin and remove that column
         @client.join(buffer.name) if buffer instanceof ChannelBuffer && (!buffer.isArchived) && buffer.autoJoin
 
     motd: (motd, over) ->
@@ -661,7 +660,7 @@ class Connection extends EventEmitter
       Log.error "Error [#{@getName()}]: #{error.stack}"
       @consoleBuffer.addEvent
         type: 'error',
-        msg: error.args.join(' '),
+        msg: (if error.args then error.args.join(' ') else error),
         over
 
 module.exports = Connection
