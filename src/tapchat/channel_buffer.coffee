@@ -28,10 +28,13 @@ class ChannelBuffer extends ChatBuffer
     super(connection, info)
     @autoJoin = info.auto_join
 
-  setJoined: (joined) ->
+  setJoined: (joined, callback) ->
     @unarchive =>
-      @isJoined = joined
-      @members = {} unless joined
+      @connection.engine.db.setBufferAutoJoin @connection.id, @id, joined, =>
+        @isJoined = joined
+        @autoJoin = joined
+        @members = {} unless joined
+        callback()
 
   setMembers: (nicks) ->
     @members = {}

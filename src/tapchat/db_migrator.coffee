@@ -27,7 +27,7 @@ class DBMigrator
         queue.perform (over) =>
           @runMigration(version, over)
 
-    queue.whenDone(callback)
+    queue.whenDone callback
     queue.doneAddingJobs()
 
   runMigration: (version, callback) ->

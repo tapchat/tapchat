@@ -246,4 +246,21 @@ class BacklogDB
         throw err if err
         callback()
 
+  setBufferAutoJoin: (cid, bid, autoJoin, callback) ->
+    query = """
+      UPDATE buffers
+      SET auto_join = $auto_join,
+      updated_at = $time
+      WHERE cid = $cid AND bid = $bid
+    """
+
+    @db.run query,
+      $cid: cid,
+      $bid: bid,
+      $auto_join: autoJoin,
+      $time: new Date().getTime(),
+      (err) ->
+        throw err if err
+        callback()
+
 module.exports = BacklogDB

@@ -248,7 +248,7 @@ class Engine
         queue.perform (over) =>
           @send client, message, over
 
-    queue.whenDone => cb() if cb
+    queue.whenDone cb if cb
     queue.doneAddingJobs()
 
     return message

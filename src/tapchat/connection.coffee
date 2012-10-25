@@ -225,7 +225,7 @@ class Connection extends EventEmitter
 
   addEventToAllBuffers: (event, callback) ->
     queue = new WorkingQueue(1)
-    queue.whenDone -> callback()
+    queue.whenDone callback
     for buffer in @buffers
       do (buffer) =>
         queue.perform (over) =>
@@ -328,7 +328,16 @@ class Connection extends EventEmitter
     close: (over) ->
       @certCallbacks = {}
       @isRegistered = false
-      buffer.setJoined(false) for buffer in @buffers when buffer instanceof ChannelBuffer
+
+      queue = new WorkingQueue(1)
+
+      for buffer in @buffers when buffer instanceof ChannelBuffer
+        queue.perform (bufferOver) =>
+          buffer.setJoined(false, bufferOver)
+
+      queue.whenDone over
+      queue.doneAddingJobs()
+
       @addEventToAllBuffers
         type: 'socket_closed',
         over
@@ -390,10 +399,10 @@ class Connection extends EventEmitter
     selfJoin: (channel, message, over) ->
       @getOrCreateBuffer channel, 'channel', (buffer) =>
         buffer.addMember(@getNick())
-        buffer.setJoined(true)
-        buffer.addEvent
-          type: 'you_joined_channel',
-          over
+        buffer.setJoined true, =>
+          buffer.addEvent
+            type: 'you_joined_channel',
+            over
 
     part: (channel, nick, reason, message, over) ->
       return @signalHandlers.selfPart.apply(this, [ channel, reason, over ] ) if nick == @getNick()
@@ -409,10 +418,10 @@ class Connection extends EventEmitter
 
     selfPart: (channel, reason, over) ->
       if buffer = @getBuffer(channel)
-        buffer.setJoined(false)
-        buffer.addEvent
-          type: 'you_parted_channel',
-          over
+        buffer.setJoined false, =>
+          buffer.addEvent
+            type: 'you_parted_channel',
+            over
       else
         over()
 
@@ -429,11 +438,19 @@ class Connection extends EventEmitter
         over()
 
     selfQuit: (reason, over) ->
-      buffer.setJoined(false) for buffer in @buffers when buffer.type instanceof ChannelBuffer
-      @addEventToAllBuffers
-        type: 'quit_server'
-        msg:  reason,
-        over
+      queue = new WorkingQueue(1)
+
+      for buffer in @buffers when buffer instanceof ChannelBuffer
+        queue.perform (bufferOver) =>
+          buffer.setJoined(false, bufferOver)
+
+      queue.whenDone =>
+        @addEventToAllBuffers
+          type: 'quit_server'
+          msg:  reason,
+          over
+
+      queue.doneAddingJobs()
 
     quit: (nick, reason, channels, message, over) ->
       queue = new WorkingQueue(1)
@@ -451,7 +468,7 @@ class Connection extends EventEmitter
             else
               bufferOver()
 
-      queue.whenDone -> over()
+      queue.whenDone over
       queue.doneAddingJobs()
 
     kill: (nick, reason, channels, message, over) ->
@@ -573,7 +590,7 @@ class Connection extends EventEmitter
               oldnick: oldnick,
               addEventOver
 
-      queue.whenDone -> over()
+      queue.whenDone over
       queue.doneAddingJobs()
 
     selfNick: (oldnick, newnick, channels, message, over) ->
@@ -597,7 +614,7 @@ class Connection extends EventEmitter
               oldnick: oldnick,
               addEventOver
 
-      queue.whenDone -> over()
+      queue.whenDone over
       queue.doneAddingJobs()
 
     invite: (channel, from, message, over) ->
