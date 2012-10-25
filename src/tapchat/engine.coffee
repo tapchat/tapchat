@@ -22,6 +22,7 @@ Path          = require('path')
 Fs            = require('fs')
 WorkingQueue  = require('capisce').WorkingQueue
 Http          = require('http')
+Https         = require('https')
 Passport      = require('passport')
 LocalStrategy = require('passport-local').Strategy
 Express       = require('express')
@@ -34,6 +35,7 @@ Crypto        = require('crypto')
 _             = require('underscore')
 DataBuffer    = require('buffer').Buffer
 Gzippo        = require('gzippo')
+Eco           = require('eco')
 
 Log          = require './log'
 Base64       = require '../base64'
@@ -75,11 +77,9 @@ class Engine
   
     @sessions = new SessionStore(Path.join(Config.getDataDirectory(), 'sessions.json'))
 
-    @app = Express.createServer
-      key:  Fs.readFileSync(Config.getCertFile())
-      cert: Fs.readFileSync(Config.getCertFile())
+    @app = Express()
 
-    # @app.use(Express.logger()) # FIXME: Only if verbose
+    @app.use(Express.logger()) if Log.level == 'silly'
     @app.use(Express.cookieParser())
     @app.use(Express.bodyParser())
     @app.use(Express.methodOverride())
@@ -88,10 +88,14 @@ class Engine
     @app.use(Gzippo.compress())
 
     @app.set 'views', __dirname + '/../../web'
-    @app.set 'view engine', 'html.eco'
-    @app.register('.html.eco', require('eco'))
+    @app.engine 'eco', (path, options, fn) ->
+      Fs.readFile path, 'utf8', (err, str) ->
+        return fn(err) if err
+        str = Eco.render(str, options)
+        fn(null, str)
+
     @app.get '/', (req, res) =>
-      res.render 'index',
+      res.render 'index.html.eco',
         layout:          false,
         num_clients:     @clients.length
         num_connections: @connections.length
@@ -129,20 +133,25 @@ class Engine
       ), ->
         res.json(events)
 
-    @app.addListener 'upgrade', (request, socket, head) =>
+    @web = Https.createServer
+      key:  Fs.readFileSync(Config.getCertFile())
+      cert: Fs.readFileSync(Config.getCertFile()),
+      @app
+
+    @web.addListener 'upgrade', (request, socket, head) =>
       request.method = 'UPGRADE' # Prevent any matching GET handlers from running
       res = new Http.ServerResponse(request)
       @app.handle request, res, =>
         @inbandBacklog = request.param('inband', false)
         if @sessions.get(request.cookies.session)
           ws = new WebSocket(request, socket, head)
-          Log.info 'websocket client: connected'
+          Log.debug 'websocket client: connected'
           @addClient(ws)
         else
-          console.log('unauthorized')
+          Log.info 'websocket client: unauthorized'
           request.socket.end('HTTP/1.1 401 Unauthorized\r\n\r\n');
 
-    @app.listen port, =>
+    @web.listen port, =>
       console.log "\nTapChat ready at https://localhost:#{port}\n"
       callback(this) if callback
 

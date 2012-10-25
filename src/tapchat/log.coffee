@@ -7,8 +7,9 @@ log = new Winston.Logger
       level: 'info'
   ]
 
-log.setLevel = (level) =>
-  for name, transport of log.transports
+log.setLevel = (level) ->
+  @level = level
+  for name, transport of @transports
     transport.level = level
 
 module.exports = log
