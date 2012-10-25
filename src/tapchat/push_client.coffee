@@ -7,7 +7,7 @@ ConsoleBuffer      = require './console_buffer'
 ChannelBuffer      = require './channel_buffer'
 ConversationBuffer = require './conversation_buffer'
 
-NOTIFY_URL = 'https://tapchat.heroku.com/notify'
+NOTIFY_URL = 'https://tapchat.herokuapp.com/notify'
 
 class PushClient
   constructor: (engine) ->
