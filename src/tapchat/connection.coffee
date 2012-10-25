@@ -277,8 +277,14 @@ class Connection extends EventEmitter
     throw 'missing name' unless name
     throw 'missing type' unless type
 
+    expectedType = switch type
+      when 'console' then ConsoleBuffer
+      when 'channel' then ChannelBuffer
+      when 'conversation' then ConversationBuffer
+      else null
+
     buffer = @getBuffer(name)
-    return callback(buffer, false) if buffer
+    return callback(buffer, false) if buffer && buffer instanceof expectedType
 
     @createBuffer(name, type, callback)
 
@@ -497,6 +503,7 @@ class Connection extends EventEmitter
           over()
       else
         @getOrCreateBuffer to, 'conversation', (buffer) =>
+          over() unless buffer
           buffer.unarchive =>
             buffer.addEvent
               type:      'buffer_msg'

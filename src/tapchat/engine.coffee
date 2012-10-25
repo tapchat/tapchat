@@ -314,6 +314,14 @@ class Engine
       to   = message.to
       text = message.msg
 
+      # FIXME: Implement commands.
+      if to == '*'
+        conn.consoleBuffer.addEvent
+          type: 'error'
+          msg: 'Commands not yet supported.',
+          callback
+        return
+
       if text
         # selfMessage event will take care of opening the buffer.
         conn.say(to, text)
