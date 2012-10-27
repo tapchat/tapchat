@@ -338,8 +338,9 @@ class Connection extends EventEmitter
       queue = new WorkingQueue(1)
 
       for buffer in @buffers when buffer instanceof ChannelBuffer
-        queue.perform (bufferOver) =>
-          buffer.setJoined(false, bufferOver)
+        do (buffer) =>
+          queue.perform (bufferOver) =>
+            buffer.setJoined(false, bufferOver)
 
       queue.whenDone over
       queue.doneAddingJobs()
@@ -446,8 +447,9 @@ class Connection extends EventEmitter
       queue = new WorkingQueue(1)
 
       for buffer in @buffers when buffer instanceof ChannelBuffer
-        queue.perform (bufferOver) =>
-          buffer.setJoined(false, bufferOver)
+        do (buffer) =>
+          queue.perform (bufferOver) =>
+            buffer.setJoined(false, bufferOver)
 
       queue.whenDone =>
         @addEventToAllBuffers
@@ -590,12 +592,13 @@ class Connection extends EventEmitter
 
       for name in [ oldnick ].concat(channels)
         if buffer = @getBuffer(name)
-          queue.perform (addEventOver) =>
-            buffer.addEvent
-              type: 'nickchange'
-              newnick: newnick
-              oldnick: oldnick,
-              addEventOver
+          do (buffer) =>
+            queue.perform (addEventOver) =>
+              buffer.addEvent
+                type: 'nickchange'
+                newnick: newnick
+                oldnick: oldnick,
+                addEventOver
 
       queue.whenDone over
       queue.doneAddingJobs()
@@ -614,12 +617,13 @@ class Connection extends EventEmitter
 
       for name in [ oldnick ].concat(channels)
         if buffer = @getBuffer(name)
-          queue.perform (addEventOver) =>
-            buffer.addEvent
-              type: 'you_nickchange'
-              newnick: newnick
-              oldnick: oldnick,
-              addEventOver
+          do (buffer) =>
+            queue.perform (addEventOver) =>
+              buffer.addEvent
+                type: 'you_nickchange'
+                newnick: newnick
+                oldnick: oldnick,
+                addEventOver
 
       queue.whenDone over
       queue.doneAddingJobs()
