@@ -44,9 +44,8 @@ class PushClient
 
     Log.info "Sending push notification: #{json}"
 
-    # Push notifications go to the TapChat server, then to UrbanAirship,
-    # then to Google (C2DM). None of these people need to know what you're
-    # saying.
+    # Push notifications go to the TapChat server, then to Google (GCM).
+    # Nobody needs to know what you're saying.
     [ iv, ciphertext ] = @encrypt(@engine.pushKey, json)
 
     body =

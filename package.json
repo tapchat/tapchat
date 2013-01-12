@@ -1,8 +1,8 @@
 {
   "name": "tapchat",
   "preferGlobal": "true",
-  "version": "0.0.32",
-  "versionCode": "34",
+  "version": "0.0.35",
+  "versionCode": "35",
   "author": {
     "name": "Eric Butler",
     "email": "eric@codebutler.com"
