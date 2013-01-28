@@ -151,6 +151,12 @@ class Engine
           Log.info 'websocket client: unauthorized'
           request.socket.end('HTTP/1.1 401 Unauthorized\r\n\r\n');
 
+    @web.on 'error', (e) =>
+      if e.code == 'EADDRNOTAVAIL'
+        Log.debug "IPv6 socket failed (#{e.code}). Trying IPv4."
+        @web.listen port, =>
+          callback(this) if callback
+
     @web.listen port, '::', =>
       console.log "\nTapChat ready at https://localhost:#{port}\n"
       callback(this) if callback
