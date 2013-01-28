@@ -152,11 +152,15 @@ class Engine
           request.socket.end('HTTP/1.1 401 Unauthorized\r\n\r\n');
 
     @web.on 'error', (e) =>
-      if e.code == 'EADDRNOTAVAIL'
-        Log.debug "IPv6 socket failed (#{e.code}). Trying IPv4."
+      if this.retried is false
+        this.retried = true
+        Log.info "IPv6 socket failed (#{e.code}). Trying IPv4."
         @web.listen port, =>
           callback(this) if callback
+      else
+        Log.error "Gave up trying to listen on port #{port}: #{e.code}"
 
+    this.retried = false
     @web.listen port, '::', =>
       console.log "\nTapChat ready at https://localhost:#{port}\n"
       callback(this) if callback
