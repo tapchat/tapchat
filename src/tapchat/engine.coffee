@@ -151,7 +151,7 @@ class Engine
           Log.info 'websocket client: unauthorized'
           request.socket.end('HTTP/1.1 401 Unauthorized\r\n\r\n');
 
-    @web.listen port, =>
+    @web.listen port, '::', =>
       console.log "\nTapChat ready at https://localhost:#{port}\n"
       callback(this) if callback
 
