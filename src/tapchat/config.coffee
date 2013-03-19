@@ -65,12 +65,7 @@ Config =
         over()
 
     queue.perform (over) =>
-      # FIXME: Workaround for https://github.com/visionmedia/commander.js/issues/72
-      readline = require('readline')
-      if readline.emitKeypressEvents # undocumented API, may change in the future
-        readline.emitKeypressEvents(process.stdin)
-
-      Program.password 'Choose a password:', (password) ->
+      Program.password 'Choose a password:', '*', (password) ->
         config.password = PasswordHash.generate(password)
         over()
 
