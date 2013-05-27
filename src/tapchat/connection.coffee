@@ -143,7 +143,7 @@ class Connection extends EventEmitter
       if (event.type != 'end_of_backlog' || (event.type == 'end_of_backlog' and !client))
         send event
       ), ->
-        queue.whenDone callback
+        queue.onceDone callback
         queue.doneAddingJobs()
 
   getBacklog: (callback, done) ->
@@ -162,7 +162,7 @@ class Connection extends EventEmitter
             callback(event) for event in events
             bufferOver()
 
-    queue.whenDone =>
+    queue.onceDone =>
       callback
         type: 'end_of_backlog'
         cid:  @id
@@ -171,7 +171,7 @@ class Connection extends EventEmitter
       if @isConnecting()
         callback(merge(B.connecting(this), bid: buffer.id)) for buffer in @buffers
 
-    queue.whenDone done
+    queue.onceDone done
     queue.doneAddingJobs()
 
   edit: (options, callback) ->
@@ -225,7 +225,7 @@ class Connection extends EventEmitter
 
   addEventToAllBuffers: (event, callback) ->
     queue = new WorkingQueue(1)
-    queue.whenDone callback
+    queue.onceDone callback
     for buffer in @buffers
       do (buffer) =>
         queue.perform (over) =>
@@ -342,7 +342,7 @@ class Connection extends EventEmitter
           queue.perform (bufferOver) =>
             buffer.setJoined(false, bufferOver)
 
-      queue.whenDone over
+      queue.onceDone over
       queue.doneAddingJobs()
 
       @addEventToAllBuffers
@@ -451,7 +451,7 @@ class Connection extends EventEmitter
           queue.perform (bufferOver) =>
             buffer.setJoined(false, bufferOver)
 
-      queue.whenDone =>
+      queue.onceDone =>
         @addEventToAllBuffers
           type: 'quit_server'
           msg:  reason,
@@ -475,7 +475,7 @@ class Connection extends EventEmitter
             else
               bufferOver()
 
-      queue.whenDone over
+      queue.onceDone over
       queue.doneAddingJobs()
 
     kill: (nick, reason, channels, message, over) ->
@@ -600,7 +600,7 @@ class Connection extends EventEmitter
                 oldnick: oldnick,
                 addEventOver
 
-      queue.whenDone over
+      queue.onceDone over
       queue.doneAddingJobs()
 
     selfNick: (oldnick, newnick, channels, message, over) ->
@@ -625,7 +625,7 @@ class Connection extends EventEmitter
                 oldnick: oldnick,
                 addEventOver
 
-      queue.whenDone over
+      queue.onceDone over
       queue.doneAddingJobs()
 
     invite: (channel, from, message, over) ->

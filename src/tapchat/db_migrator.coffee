@@ -27,7 +27,7 @@ class DBMigrator
         queue.perform (over) =>
           @runMigration(version, over)
 
-    queue.whenDone callback
+    queue.onceDone callback
     queue.doneAddingJobs()
 
   runMigration: (version, callback) ->
@@ -56,7 +56,7 @@ class DBMigrator
         throw err if err
         over()
 
-    queue.whenDone callback
+    queue.onceDone callback
 
   ensureMigrationTable: (callback) ->
     sql = """

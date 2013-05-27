@@ -72,7 +72,7 @@ Config =
     queue.perform (over) =>
       Config.generateCert over
 
-    queue.whenDone =>
+    queue.onceDone =>
       Config.verifyConfig config, callback
 
     queue.doneAddingJobs()

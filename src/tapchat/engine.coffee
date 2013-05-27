@@ -257,7 +257,7 @@ class Engine
         queue.perform (over) =>
           @send client, message, over
 
-    queue.whenDone cb if cb
+    queue.onceDone cb if cb
     queue.doneAddingJobs()
 
     return message
@@ -276,7 +276,7 @@ class Engine
             callback event
           ), over
 
-    queue.whenDone =>
+    queue.onceDone =>
       callback
         type: 'backlog_complete'
       done() if done
@@ -301,7 +301,7 @@ class Engine
             queue.perform (over) =>
               buffer.setLastSeenEid(eid, over)
 
-      queue.whenDone =>
+      queue.onceDone =>
         @db.getAllLastSeenEids (updatedSeenEids) =>
           @send client,
             type: 'heartbeat_echo',
