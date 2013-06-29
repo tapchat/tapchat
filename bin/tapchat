@@ -3,6 +3,7 @@
 var path    = require('path');
 var fs      = require('fs');
 var program = require('commander');
+var exec    = require('child_process').exec;
 var spawn   = require('child_process').spawn;
 
 var lib = path.join(path.dirname(fs.realpathSync(__filename)), '..', 'lib', 'tapchat');
@@ -31,30 +32,66 @@ program
         return;
       }
 
+      function _start_process() {
+        var args = process.argv;
+        args.push('-f');
+
+        var node = args.shift(1);
+
+        var out = fs.openSync(Config.getLogFile(), 'a');
+        var err = fs.openSync(Config.getLogFile(), 'a');
+        var child = spawn(node, args, {
+          detached: true,
+          stdio: [ 'ignore', out, err ]
+        });
+
+        fs.writeFileSync(Config.getPidFile(), child.pid);
+
+        child.unref();
+
+        Log.info('Daemon started successfully with pid: ' + child.pid);
+      } // / _start_process
+
       var pidFile = Config.getPidFile();
       if (fs.existsSync(pidFile)) {
-        console.log('TapChat is already running.');
-        return;
-      }
+        var proc_pids;
+        var pgrep = exec('pgrep node',
+          function(error, stdout, stderr) {
+            if (error != null) {
+              if (error.code == 1) {
+                // No processes were matched.
+              }
+              else if (error.code == 2) {
+                console.loge("child_process.exec pgrep: Invalid options were specified on the command line.");
+              }
+              else if (error.code == 3) {
+                console.log("child_process.exec pgrep: An internal error occurred.");                
+              }
+            }
+            if (stderr) {
+              console.log('stderr while checking TapChat PID: ' + stderr);
+            }
+            var proc_pids = stdout.split("\n");
 
-      var args = process.argv;
-      args.push('-f');
+            var pid = fs.readFileSync(pidFile);
+            if (proc_pids != undefined) {
+              for (var i in proc_pids) {
+                if (pid==proc_pids[i]) {
+                  // Yup, it really is running!
+                  console.log('TapChat is already running under PID', proc_pids[i]+'.');
+                  return;
+                }
+              }
+            }
+            // Old / undeleted pidFile (power outage?)
+            fs.unlinkSync(pidFile);
 
-      var node = args.shift(1);
-
-      var out = fs.openSync(Config.getLogFile(), 'a');
-      var err = fs.openSync(Config.getLogFile(), 'a');
-      var child = spawn(node, args, {
-        detached: true,
-        stdio: [ 'ignore', out, err ]
-      });
-
-      fs.writeFileSync(Config.getPidFile(), child.pid);
-
-      child.unref();
-
-      Log.info('Daemon started successfully with pid: ' + child.pid);
-    });
+            _start_process()
+        }); // /exec pgrep node
+      } else {
+        _start_process()
+      } // /if pidFile exists
+    }); // /Config.load
   });
 
 program
