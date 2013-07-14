@@ -70,7 +70,7 @@ class PushClient
     cipher = Crypto.createCipheriv('aes-256-cbc', key.toString('binary'), iv.toString('binary'))
 
     ciph  = cipher.update msg, 'utf8', 'binary'
-    ciph += cipher.final()
+    ciph += cipher.final('binary')
 
     return [ iv, new Buffer(ciph, 'binary') ]
 
