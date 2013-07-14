@@ -1,8 +1,8 @@
 {
   "name": "tapchat",
   "preferGlobal": "true",
-  "version": "0.0.38",
-  "versionCode": "38",
+  "version": "0.0.39",
+  "versionCode": "39",
   "author": {
     "name": "Eric Butler",
     "email": "eric@codebutler.com"
@@ -47,7 +47,7 @@
   },
   "devDependencies": {},
   "engines": {
-    "node": "0.8.x"
+    "node": "0.10.x"
   },
   "bugs": {
     "url": "https://github.com/codebutler/tapchat-server/issues"
