@@ -54,6 +54,6 @@ jQuery.fn.serializeObject = function() {
 
 jQuery.fn.appendSorted = function(el) {
   this.append(el);
-  var members = this.children().sort(function(a,b) { return a.textContent.localeCompare(b.textContent) });
-  this.empty().append(members);
+  var members = this.children().detach().sort(function(a,b) { return a.textContent.localeCompare(b.textContent) });
+  this.append(members);
 }
