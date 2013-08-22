@@ -43,7 +43,8 @@
     "winston": "0.6.x",
     "passport": "0.1.17",
     "passport-local": "0.1.6",
-    "gzippo": "0.2.0"
+    "gzippo": "0.2.0",
+    "is-running": "1.0.3"
   },
   "devDependencies": {},
   "engines": {

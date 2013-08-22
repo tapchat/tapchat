@@ -4,6 +4,7 @@ var path    = require('path');
 var fs      = require('fs');
 var program = require('commander');
 var spawn   = require('child_process').spawn;
+var running = require('is-running');
 
 var lib = path.join(path.dirname(fs.realpathSync(__filename)), '..', 'lib', 'tapchat');
 
@@ -33,8 +34,14 @@ program
 
       var pidFile = Config.getPidFile();
       if (fs.existsSync(pidFile)) {
-        console.log('TapChat is already running.');
-        return;
+        var pid = parseInt(fs.readFileSync(pidFile));
+        if (running(pid)) {
+          console.log('TapChat is already running (pid: ' + pid + ').');
+          return;
+        } else {
+          console.log('Removing stale pid file.');
+          fs.unlinkSync(pidFile);
+        }
       }
 
       var args = process.argv;
@@ -66,7 +73,7 @@ program
       return;
     }
 
-    var pid = fs.readFileSync(pidFile);
+    var pid = parseInt(fs.readFileSync(pidFile));
     try {
       process.kill(pid);
       fs.unlinkSync(pidFile);
