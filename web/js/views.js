@@ -177,7 +177,7 @@ var NetworkListRowView = Backbone.View.extend({
     }
 
     var bufferListView = new BufferListRowView({ model: buffer });
-    this.$('.bufferList').append(bufferListView.render().el);
+    this.$('.bufferList').appendSorted(bufferListView.render().el);
   },
 
   select: function () {
@@ -276,7 +276,7 @@ var MemberListView = Backbone.View.extend({
 
   addMember: function (member) {
     var view = new MemberListRowView({ model: member });
-    $(this.el).append(view.render().el);
+    $(this.el).appendSorted(view.render().el);
   }
 });
 
