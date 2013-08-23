@@ -15,9 +15,7 @@
     <script type="text/javascript" src="js/lib/backbone.js"></script>
     <script type="text/javascript" src="js/lib/ICanHaz.js"></script>
     <script type="text/javascript" src="js/lib/jquery-linkify.js"></script>
-    <script type="text/javascript" src="js/lib/bootstrap-modal.js"></script>
-    <script type="text/javascript" src="js/lib/bootstrap-dropdown.js"></script>
-    <script type="text/javascript" src="js/lib/bootstrap-button.js"></script>
+    <script type="text/javascript" src="js/lib/bootstrap.js"></script>
     <script type="text/javascript" src="js/lib/bootbox.js"></script>
     <script type="text/javascript" src="js/lib/jquery.tappable.js"></script>
     <script type="text/javascript" src="js/lib/scrollfix.js"></script>
@@ -76,7 +74,7 @@
         <h3>Welcome to TapChat</h3>
         <p>Please login to continue.</p>
         <form>
-          <input type="text" class="input-medium" id="username">
+          <input type="text" class="input-medium" id="username" placeholder="Username">
           <input type="password" class="input-medium" id="password" placeholder="Password">
         </form>
       </div>
@@ -178,7 +176,6 @@
         <button class="btn btn-edit">Edit</button>
         <button class="btn btn-danger btn-remove">Remove</button>
     </script>
-
   </head>
   <body>
     <div id="app">
@@ -197,8 +194,16 @@
 
         <div class="right">
           <button id="join-btn" class="btn"><i class="icon-plus"></i><span> Join Channel</span></button>
-          <button id="members-btn" class="btn" data-toggle="button"><i class="icon-user"></i></button>
+          <button id="members-btn" class="btn" data-toggle="button"><i class="icon-th-list"></i></button>
           <button id="settings-btn" class="btn"><i class="icon-wrench"></i></button>
+          <div class="dropdown btn-group pull-right btn-group-user">
+            <a id="user-btn" class="btn dropdown-toggle" data-toggle="dropdown" href="#" style="outline: 0">
+              <i class="icon-user"></i>&nbsp;<span class="username"></span> <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-arrow">
+              <li><a href="#" id="logout-btn">Logout</a></li>
+            </ul>
+          </div>
         </div>
       </div>
 

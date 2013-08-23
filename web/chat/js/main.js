@@ -45,6 +45,16 @@ $(function () {
     $('#sidebar').toggleClass('show');
   });
 
+  $('#logout-btn').tappable(function () {
+    $.post('/chat/logout', null, function (data) {
+      $.cookie('session', null);
+      app.view.showLoginDialog();
+    })
+    .error(function() {
+      alert('error');
+    });
+  });
+
   new ScrollFix($('#networks')[0]);
   new ScrollFix($('#users')[0]);
 

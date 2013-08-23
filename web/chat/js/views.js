@@ -128,7 +128,7 @@ var AppView = Backbone.View.extend({
       "backdrop": "static"
     });
 
-    dialog.find("input[type=password]").focus();
+    dialog.find("input[type=text]").focus();
   },
 
   showCertDialog: function (message) {
@@ -391,11 +391,16 @@ var BufferView = Backbone.View.extend({
 var MainMenuView = Backbone.View.extend({
   initialize: function (options) {
     window.app.networkList.bind('add', this.addNetwork, this);
+    window.app.bind('user-updated', this.updateUser, this);
   },
 
   addNetwork: function (network) {
     var view = new NetworkListRowView({ model: network });
     $('#main-menu').prepend(view.render().el);
+  },
+
+  updateUser: function (user) {
+    $('#nav .username').html(user.name);
   }
 });
 
@@ -408,6 +413,11 @@ var SettingsView = Backbone.View.extend({
 
     app.view.on('page-changed', this.pageChanged, this);
     app.networkList.bind('add', this.addNetwork, this);
+
+    this.$('.nav-tabs a').click(function (e) {
+      e.preventDefault();
+      $(this).tab('show');
+    });
 
     this.$('#add-network-btn').click(function () {
       app.view.showAddNetworkDialog();

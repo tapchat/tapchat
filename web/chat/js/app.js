@@ -126,6 +126,11 @@ _.extend(App.prototype, Backbone.Events, {
       this.setConnectionState('loading');
     },
 
+    stat_user: function(message) {
+      this.user = message;
+      this.trigger('user-updated', this.user);
+    },
+
     backlog_complete: function (message) {
       this.setConnectionState('loaded');
       this.sendHeartbeat();

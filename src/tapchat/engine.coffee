@@ -116,9 +116,25 @@ class Engine
           response =
             success: true
             session: sessionId
+            user:
+              id: user.uid
+              name: user.name
+              is_admin: user.is_admin == 1
+
           res.json response
 
       auth(req, res)
+
+    @app.post '/chat/logout', (req, res) =>
+      session_id = req.cookies.session
+      unless @sessions.get(session_id)
+        req.socket.end('HTTP/1.1 401 Unauthorized\r\n\r\n');
+        return next()
+
+      @sessions.destroy(session_id)
+
+      res.json
+        success: true
 
     @app.get '/chat/backlog', (req, res) =>
       unless @sessions.get(req.cookies.session)

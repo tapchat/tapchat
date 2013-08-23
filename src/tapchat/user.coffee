@@ -87,6 +87,11 @@ class User
       push_id:       @pushId
       push_key:      Base64.urlEncode(@pushKey)
 
+    @send client,
+      type: 'stat_user'
+      id: @id
+      name: @name
+
     unless @inbandBacklog
       # {"bid":-1,"eid":-1,"type":"oob_include","time":1340156453,"highlight":false,"url":"/chat/oob-loader?key=e82d5ead-bfbd-4a55-94c8-c145798a3520"}
       @send client,
