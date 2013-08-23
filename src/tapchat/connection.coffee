@@ -35,7 +35,8 @@ ConversationBuffer = require('./conversation_buffer')
 B = require('./message_builder')
 
 class Connection extends EventEmitter
-  constructor: (engine, options, callback) ->
+  constructor: (user, engine, options, callback) ->
+    @user   = user
     @engine = engine
 
     @buffers = []
@@ -134,9 +135,9 @@ class Connection extends EventEmitter
     send = (message) =>
       queue.perform (over) =>
         if client
-          @engine.send(client, message, over)
+          @user.send(client, message, over)
         else
-          @engine.broadcast(message, over)
+          @user.broadcast(message, over)
 
     @getBacklog ((event) =>
       # HACK: end_of_backlog not needed for a new connection (being broadcast to everyone)
@@ -177,7 +178,7 @@ class Connection extends EventEmitter
   edit: (options, callback) ->
     @engine.db.updateConnection @id, options, (row) =>
       @updateAttributes(row)
-      @engine.broadcast(B.serverDetailsChanged(this))
+      @user.broadcast(B.serverDetailsChanged(this))
       callback(row)
 
   acceptCert: (fingerprint, accept, done) ->
@@ -290,7 +291,7 @@ class Connection extends EventEmitter
 
   createBuffer: (name, type, callback) ->
     self = this
-    @engine.db.insertBuffer @id, name, type, (bufferInfo) =>
+    @engine.db.insertBuffer @id, @user.id, name, type, (bufferInfo) =>
       buffer = self.addBuffer bufferInfo
       callback(buffer, true)
 
@@ -652,7 +653,7 @@ class Connection extends EventEmitter
         # Ask the user
         @pendingSSLFingerprint = cert.fingerprint
         @pendingSSLCallback    = callback
-        @engine.broadcast
+        @user.broadcast
           cid:         @id
           type:        'invalid_cert'
           hostname:    @getHostName()

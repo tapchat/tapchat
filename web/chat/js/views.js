@@ -109,11 +109,12 @@ var AppView = Backbone.View.extend({
       "label" : "Login",
       "class" : "btn-primary",
       "callback": function() {
+          var username = dialog.find("input[type=text]").val();
           var password = dialog.find("input[type=password]").val();
           if (password.length === 0) {
             return false;
           }
-          $.post('/login', { username: 'user', password: password }, function (data) {
+          $.post('/login', { username: 'user', username: username, password: password }, function (data) {
             $.cookie('session', data.session);
             app.connect();
           })

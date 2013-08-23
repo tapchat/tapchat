@@ -19,11 +19,6 @@
         </a></p>
       </div>
       <div class="span4">
-        <h3>Status</h3>
-        <ul class="unstyled">
-          <li>Client connections: <%= @num_clients %></li>
-          <li>IRC connections: <%= @num_connections %></li>
-        </ul>
       </div>
     </div>
   </div>

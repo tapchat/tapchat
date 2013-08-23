@@ -30,10 +30,10 @@ DBMigrator = require('./db_migrator')
 CoffeeScript = require 'coffee-script'
 {starts, ends, compact, count, merge, extend, flatten, del, last} = CoffeeScript.helpers
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 class BacklogDB
-  constructor: (engine, callback) ->
+  constructor: (callback) ->
     @file = Path.join(Config.getDataDirectory(), 'backlog.db')
 
     migrationsDir = __dirname + '../../../db'
@@ -44,10 +44,31 @@ class BacklogDB
         dir: migrationsDir
       m.migrate SCHEMA_VERSION, callback
 
-  selectConnections: (callback) ->
-    @db.all 'SELECT * FROM connections', (err, rows) ->
+  selectUsers: (callback) ->
+    @db.all 'SELECT * FROM users', (err, rows) ->
       throw err if err
       callback(rows)
+
+  selectUser: (id, callback) ->
+    @db.get 'SELECT * FROM users WHERE uid = $uid', 
+      $uid: id,
+      (err, row) ->
+        throw err if err
+        callback(row)
+
+  selectUserByName: (name, callback) ->
+    @db.get 'SELECT * FROM users WHERE name = $name',
+      $name: name,
+      (err, row) ->
+        throw err if err
+        callback(row)
+
+  selectConnections: (uid, callback) ->
+    @db.all 'SELECT * FROM connections WHERE uid = $uid', 
+      $uid: uid,
+      (err, rows) ->
+        throw err if err
+        callback(rows)
 
   selectConnection: (cid, callback) ->
     @db.get 'SELECT * FROM connections WHERE cid = $cid',
@@ -63,16 +84,33 @@ class BacklogDB
         throw err if err
         callback(rows)
 
-  insertConnection: (options, callback) ->
+  insertUser: (name, password_hash, is_admin, callback) ->
+    throw 'name is required' if _.isEmpty(name)
+    throw 'password hash is required' if _.isEmpty(password_hash)
+    self = this
+    @db.run """
+      INSERT INTO users (name, password, is_admin)
+      VALUES ($name, $password, $is_admin)
+      """,
+      $name: name
+      $password: password_hash,
+      $is_admin: is_admin,
+      (err) ->
+        throw err if err
+        self.selectUser @lastID, (row) ->
+          callback(row)
+
+  insertConnection: (uid, options, callback) ->
     throw 'hostname is required' if _.isEmpty(options.hostname)
     throw 'port is required'     unless parseInt(options.port) > 0
     throw 'nickname is required' if _.isEmpty(options.nickname)
     throw 'realname is required' if _.isEmpty(options.realname)
     self = this
     @db.run """
-      INSERT INTO connections (name, server, port, is_ssl, nick, user_name, real_name, server_pass)
-      VALUES ($name, $server, $port, $is_ssl, $nick, $user_name, $real_name, $server_pass)
+      INSERT INTO connections (uid, name, server, port, is_ssl, nick, user_name, real_name, server_pass)
+      VALUES ($uid, $name, $server, $port, $is_ssl, $nick, $user_name, $real_name, $server_pass)
       """,
+      $uid:         uid,
       $name:        options.name ? options.hostname
       $server:      options.hostname
       $port:        options.port
@@ -133,10 +171,11 @@ class BacklogDB
         throw err if err
         callback()
 
-  insertBuffer: (cid, name, type, callback) ->
+  insertBuffer: (cid, uid, name, type, callback) ->
     autoJoin = (type == 'channel')
-    @db.run 'INSERT INTO buffers (cid, name, type, auto_join) VALUES ($cid, $name, $type, $auto_join)',
+    @db.run 'INSERT INTO buffers (cid, uid, name, type, auto_join) VALUES ($cid, $uid, $name, $type, $auto_join)',
       $cid:       cid
+      $uid:       uid
       $name:      name
       $type:      type
       $auto_join: autoJoin,
@@ -192,12 +231,16 @@ class BacklogDB
         throw err if err
         callback(rows)
 
-  getAllLastSeenEids: (callback) ->
+  getAllLastSeenEids: (uid, callback) ->
     query = """
-      SELECT cid, bid, last_seen_eid FROM buffers WHERE last_seen_eid IS NOT NULL
+      SELECT cid, bid, last_seen_eid
+      FROM buffers
+      WHERE uid = $uid AND
+      last_seen_eid IS NOT NULL
     """
 
     @db.all query,
+      $uid: uid,
       (err, rows) ->
         throw err if err
 

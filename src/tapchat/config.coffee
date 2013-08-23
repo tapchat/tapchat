@@ -47,10 +47,14 @@ Config =
 
   load: (callback) ->
     Config.readConfig (config) =>
-      if config
-        callback(config)
-      else
+      unless config
         Config.setup(callback)
+        return
+
+      if config.password
+        Config.migrateOldInitialUser(config, callback)
+      else
+        callback(config, null)
 
   setup: (callback)->
     console.log 'Welcome to TapChat!'
@@ -64,16 +68,24 @@ Config =
         config.port = port || 8067
         over()
 
+    initialUser = {}
+
+    queue.perform (over) =>
+      Program.prompt 'Choose a username: ', (username) ->
+        initialUser.name = username
+        over()
+
     queue.perform (over) =>
       Program.password 'Choose a password:', '*', (password) ->
-        config.password = PasswordHash.generate(password)
+        initialUser.password = PasswordHash.generate(password)
         over()
 
     queue.perform (over) =>
       Config.generateCert over
 
     queue.onceDone =>
-      Config.verifyConfig config, callback
+      Config.verifyConfig config, (config) ->
+        callback(config, initialUser)
 
     queue.doneAddingJobs()
 
@@ -128,5 +140,20 @@ Config =
 
   getLogFile: ->
     Path.join(Config.getDataDirectory(), 'tapchat.log')
+
+  migrateOldInitialUser: (config, callback) ->
+    # This migrates to the new db-based user system.
+    # Can delete this eventually...
+    console.log 'Migrating old user to DB...'
+
+    initialUser =
+      password: config.password
+
+    delete config.password
+
+    Program.prompt 'Set your username: ', (username) ->
+      initialUser.name = username
+      Config.saveConfig config, ->
+        callback(config, initialUser)
 
 module.exports = Config
