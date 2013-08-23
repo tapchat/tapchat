@@ -401,6 +401,7 @@ var MainMenuView = Backbone.View.extend({
 
   updateUser: function (user) {
     $('#nav .username').html(user.name);
+    $('#admin-item').toggleClass('hide', !user.is_admin);
   }
 });
 
