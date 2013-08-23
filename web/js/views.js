@@ -114,7 +114,7 @@ var AppView = Backbone.View.extend({
           if (password.length === 0) {
             return false;
           }
-          $.post('/login', { username: 'user', username: username, password: password }, function (data) {
+          $.post('/chat/login', { username: 'user', username: username, password: password }, function (data) {
             $.cookie('session', data.session);
             app.connect();
           })

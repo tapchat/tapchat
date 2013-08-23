@@ -96,10 +96,9 @@ class Engine
         fn(null, str)
 
     @app.get '/', (req, res) =>
-      res.render 'index.html.eco',
-        layout:          false
+      res.render 'index.html'
 
-    @app.post '/login', (req, res) =>
+    @app.post '/chat/login', (req, res) =>
       req.body.username = 'user' unless req.body.username?
       auth = Passport.authenticate 'local', (err, user, info) =>
         return next(err) if err
