@@ -136,6 +136,36 @@ class Engine
       res.json
         success: true
 
+    @app.post '/chat/change-password', (req, res) =>
+      session = @sessions.get(req.cookies.session)
+      unless session
+        req.socket.end('HTTP/1.1 401 Unauthorized\r\n\r\n');
+        return next()
+
+      oldpassword = req.body.oldpassword
+      newpassword = req.body.newpassword
+
+      unless newpassword? and newpassword.length >= 8
+        res.json
+          success: false
+          message: 'New password is too short.',
+          400
+        return
+
+      @db.selectUser session.uid, (userInfo) =>
+        unless PasswordHash.verify(oldpassword, userInfo.password)
+          res.json
+            success: false
+            message: 'Incorrect old password.',
+            400
+          return
+
+        @db.updateUser session.uid,
+          password_hash: PasswordHash.generate(newpassword),
+          (row) =>
+            res.json
+              success: true
+
     @app.get '/chat/backlog', (req, res) =>
       unless @sessions.get(req.cookies.session)
         req.socket.end('HTTP/1.1 401 Unauthorized\r\n\r\n');

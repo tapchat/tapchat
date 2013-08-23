@@ -153,11 +153,38 @@
 
     <script type="text/html" id="Settings">
       <ul class="nav nav-tabs">
-        <li class="active"><a>IRC Networks</a></li>
+        <li class="active"><a href="#accountSettingsTab" data-toggle="tab">Account</a></li>
+        <li><a href="#networksSettingsTab" data-toggle="tab">IRC Networks</a></li>
       </ul>
-      <div class="tab-pane active" id="settings-networks">
-        <button id="add-network-btn" class="btn">Add IRC Network</button>
-        <ul id="networks-list"></ul>
+      <div class="tab-content">
+        <div class="tab-pane active" id="accountSettingsTab">
+          <form class="form-horizontal" id="change-password-form">
+            <fieldset>
+              <legend>Change Password</legend>
+            </fieldset>
+            <div class="control-group">
+              <label class="control-label" for="inputCurPassword">Current Password:</label>
+              <div class="controls">
+                <input type="password" id="inputCurPassword" name="oldpassword">
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label" for="inputNewPassword">New Password:</label>
+              <div class="controls">
+                <input type="password" id="inputNewPassword" name="newpassword">
+              </div>
+            </div>
+            <div class="control-group">
+              <div class="controls">
+                <button type="submit" class="btn">Change Password</button>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="tab-pane" id="networksSettingsTab">
+          <button id="add-network-btn" class="btn">Add IRC Network</button>
+          <ul id="networks-list"></ul>
+        </div>
       </div>
     </script>
 

@@ -422,6 +422,19 @@ var SettingsView = Backbone.View.extend({
     this.$('#add-network-btn').click(function () {
       app.view.showAddNetworkDialog();
     });
+
+    this.$('#change-password-form').submit(function () {
+      $.post('/chat/change-password', $(this).serializeObject(), function (data) {
+        $('#change-password-form input[type="password"]').val('');
+        alert('password changed!');
+      })
+      .error(function(res) {
+        var error = JSON.parse(res.responseText).message;
+        alert(error);
+      });
+
+      return false;
+    });
   },
 
   addNetwork: function (network) {

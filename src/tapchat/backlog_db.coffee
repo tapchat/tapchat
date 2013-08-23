@@ -124,6 +124,24 @@ class BacklogDB
         self.selectConnection @lastID, (row) ->
           callback(row)
 
+  updateUser: (uid, options, callback) ->
+    self = this
+
+    sql = Squel.update().table('users')
+    sql.where('uid = $uid')
+
+    setAttribute = (name, value) =>
+      sql.set name, value if value && value != undefined
+
+    setAttribute 'password', options.password_hash
+
+    @db.run sql.toString(),
+      $uid: uid,
+      (err) ->
+        throw err if err
+        self.selectUser uid, (row) ->
+          callback(row)
+
   updateConnection: (cid, options, callback) ->
     self = this
 
