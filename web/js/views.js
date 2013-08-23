@@ -115,7 +115,7 @@ var AppView = Backbone.View.extend({
             return false;
           }
           $.post('/chat/login', { username: 'user', username: username, password: password }, function (data) {
-            $.cookie('session', data.session);
+            $.cookie('session', data.session, {secure: true});
             app.connect();
           })
           .error(function() {
