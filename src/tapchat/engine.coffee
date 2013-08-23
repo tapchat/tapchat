@@ -167,14 +167,17 @@ class Engine
               success: true
 
     @app.get '/chat/backlog', (req, res) =>
-      unless @sessions.get(req.cookies.session)
+      session = @sessions.get(req.cookies.session)
+      unless session
         req.socket.end('HTTP/1.1 401 Unauthorized\r\n\r\n');
         return next()
 
+      user = @users[session.uid]
+
       events = []
 
-      @getBacklog ((event) =>
-        events.push(@prepareMessage(event))
+      user.getBacklog ((event) =>
+        events.push(user.prepareMessage(event))
       ), ->
         res.json(events)
 
@@ -189,7 +192,6 @@ class Engine
       @app.handle request, res, =>
         session = @sessions.get(request.cookies.session)
         if session
-          console.log 'got session', session, @users
           ws = new WebSocket(request, socket, head)
           user = @users[session.uid]
           user.inbandBacklog = request.param('inband', false)
