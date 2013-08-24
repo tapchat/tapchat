@@ -3,6 +3,8 @@ CREATE TABLE users (
     name        TEXT     NOT NULL UNIQUE,
     password    TEXT     NOT NULL,
     is_admin    BOOLEAN  NOT NULL DEFAULT 0,
+    push_id     TEXT     NOT NULL,
+    push_key    TEXT     NOT NULL,
     created_at  DATETIME DEFAULT (strftime('%s','now')),
     updated_at  DATETIME
 );

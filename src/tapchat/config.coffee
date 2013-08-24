@@ -1,7 +1,7 @@
 #
 # config.coffee
 #
-# Copyright (C) 2012 Eric Butler <eric@codebutler.com>
+# Copyright (C) 2012-2013 Eric Butler <eric@codebutler.com>
 #
 # This file is part of TapChat.
 #
@@ -25,8 +25,6 @@ Path         = require('path')
 Fs           = require('fs')
 Mkdirp       = require('mkdirp')
 ChildProcess = require('child_process')
-UUID         = require('node-uuid')
-Crypto       = require('crypto')
 
 Config =
   getAppVersion: ->
@@ -84,15 +82,10 @@ Config =
       Config.generateCert over
 
     queue.onceDone =>
-      Config.verifyConfig config, (config) ->
+      Config.saveConfig config, (config) ->
         callback(config, initialUser)
 
     queue.doneAddingJobs()
-
-  verifyConfig: (config, callback) ->
-    config.push_id  = UUID.v4()                                 unless config.push_id
-    config.push_key = Crypto.randomBytes(32).toString('base64') unless config.push_key
-    Config.saveConfig config, callback
 
   generateCert: (callback) ->
     certFile = Config.getCertFile()
@@ -120,7 +113,7 @@ Config =
         Fs.readFile Config.getConfigFile(), (err, data) =>
           throw err if err
           config = JSON.parse(data)
-          Config.verifyConfig(config, callback)
+          callback(config)
       else
         callback(null)
 

@@ -25,7 +25,9 @@ Config     = require './config'
 Base64     = require '../base64'
 B          = require './message_builder'
 Buffer     = require './buffer'
+DataBuffer = require('buffer').Buffer
 Connection = require './connection'
+PushClient = require './push_client'
 
 CoffeeScript = require 'coffee-script'
 {starts, ends, compact, count, merge, extend, flatten, del, last} = CoffeeScript.helpers
@@ -37,9 +39,12 @@ class User
 
     @engine = engine
 
-    @id       = info.uid
-    @name     = info.name
-    @is_admin = !!info.is_admin
+    @id         = info.uid
+    @name       = info.name
+    @is_admin   = !!info.is_admin
+    @pushId     = info.push_id
+    @pushKey    = new DataBuffer(info.push_key, 'base64')
+    @pushClient = new PushClient(this)
 
     @engine.db.selectConnections @id, (conns) =>
       @addConnection connInfo for connInfo in conns
@@ -162,7 +167,7 @@ class User
     unless message.is_backlog
       if message.highlight
         queue.perform (over) =>
-          @engine.pushClient.sendPush(message, over)
+          @pushClient.sendPush(message, over)
 
     for client in @clients
       do (client) =>

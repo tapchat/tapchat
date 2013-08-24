@@ -10,8 +10,8 @@ ConversationBuffer = require './conversation_buffer'
 NOTIFY_URL = 'https://tapchat.herokuapp.com/notify'
 
 class PushClient
-  constructor: (engine) ->
-    @engine = engine
+  constructor: (user) ->
+    @user = user
 
   sendPush: (message, callback) ->
     # FIXME: This needs to also confirm the client is still connected.
@@ -19,7 +19,7 @@ class PushClient
     #    return;
     # }
 
-    connection = @engine.findConnection(message.cid)
+    connection = @user.findConnection(message.cid)
     buffer     = connection.findBuffer(message.bid)
 
     #unless ($server->{usermode_away} == 1) {
@@ -46,10 +46,10 @@ class PushClient
 
     # Push notifications go to the TapChat server, then to Google (GCM).
     # Nobody needs to know what you're saying.
-    [ iv, ciphertext ] = @encrypt(@engine.pushKey, json)
+    [ iv, ciphertext ] = @encrypt(@user.pushKey, json)
 
     body =
-      id:      @engine.pushId
+      id:      @user.pushId
       message: Base64.urlEncode(ciphertext)
       iv:      Base64.urlEncode(iv)
 

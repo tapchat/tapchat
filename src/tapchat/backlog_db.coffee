@@ -1,7 +1,7 @@
 #
 # backlog_db.coffee
 #
-# Copyright (C) 2012 Eric Butler <eric@codebutler.com>
+# Copyright (C) 2012-2013 Eric Butler <eric@codebutler.com>
 #
 # This file is part of TapChat.
 #
@@ -22,6 +22,8 @@ Path     = require('path')
 Fs       = require('fs')
 Squel    = require('squel')
 Sqlite3  = require('sqlite3').verbose()
+UUID     = require('node-uuid')
+Crypto   = require('crypto')
 _        = require('underscore')
 
 Config     = require('./config')
@@ -87,14 +89,20 @@ class BacklogDB
   insertUser: (name, password_hash, is_admin, callback) ->
     throw 'name is required' if _.isEmpty(name)
     throw 'password hash is required' if _.isEmpty(password_hash)
+
+    push_id  = UUID.v4()
+    push_key = Crypto.randomBytes(32).toString('base64')
+
     self = this
     @db.run """
-      INSERT INTO users (name, password, is_admin)
-      VALUES ($name, $password, $is_admin)
+      INSERT INTO users (name, password, is_admin, push_id, push_key)
+      VALUES ($name, $password, $is_admin, $push_id, $push_key)
       """,
-      $name: name
-      $password: password_hash,
-      $is_admin: is_admin,
+      $name:     name
+      $password: password_hash
+      $is_admin: is_admin
+      $push_id:  push_id
+      $push_key: push_key,
       (err) ->
         throw err if err
         self.selectUser @lastID, (row) ->

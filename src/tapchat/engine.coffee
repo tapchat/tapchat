@@ -33,7 +33,6 @@ CoffeeScript  = require('coffee-script')
 Util          = require('util')
 Crypto        = require('crypto')
 _             = require('underscore')
-DataBuffer    = require('buffer').Buffer
 Gzippo        = require('gzippo')
 Eco           = require('eco')
 
@@ -41,7 +40,6 @@ Log          = require './log'
 Config       = require './config'
 User         = require './user'
 BacklogDB    = require './backlog_db'
-PushClient   = require './push_client'
 SessionStore = require './session_store'
 
 {starts, ends, compact, count, merge, extend, flatten, del, last} = CoffeeScript.helpers
@@ -51,10 +49,6 @@ class Engine
     @users = []
 
     @port = config.port
-
-    @pushId  = config.push_id
-    @pushKey = new DataBuffer(config.push_key, 'base64')
-    @pushClient = new PushClient(this)
 
     @db = new BacklogDB =>
       if initialUser
