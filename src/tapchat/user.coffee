@@ -162,7 +162,7 @@ class User
     unless message.is_backlog
       if message.highlight
         queue.perform (over) =>
-          @pushClient.sendPush(message, over)
+          @engine.pushClient.sendPush(message, over)
 
     for client in @clients
       do (client) =>
