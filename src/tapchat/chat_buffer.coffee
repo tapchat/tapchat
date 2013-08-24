@@ -29,7 +29,7 @@ class ChatBuffer extends Buffer
     return callback() if @isArchived
     @connection.engine.db.setBufferArchived @connection.id, @id, true,  =>
       @isArchived = true
-      @connection.engine.broadcast
+      @connection.user.broadcast
         type: 'buffer_archived'
         cid:  @connection.id
         bid:  @id,
@@ -39,7 +39,7 @@ class ChatBuffer extends Buffer
     return callback() unless @isArchived
     @connection.engine.db.setBufferArchived @connection.id, @id, false, =>
       @isArchived = false
-      @connection.engine.broadcast
+      @connection.user.broadcast
         type: 'buffer_unarchived'
         cid:  @connection.id
         bid:  @id,
