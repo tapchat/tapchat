@@ -1,4 +1,5 @@
 Fs = require 'fs'
+_  = require('underscore')
 
 class SessionStore
   constructor: (fileName) ->
@@ -7,6 +8,9 @@ class SessionStore
       @sessions = JSON.parse(Fs.readFileSync(@fileName).toString())
     else
       @sessions = {}
+
+  all: () ->
+    _.clone(@sessions)
 
   get: (sessionId) ->
     @sessions[sessionId]

@@ -44,7 +44,20 @@ class User
     @engine.db.selectConnections @id, (conns) =>
       @addConnection connInfo for connInfo in conns
 
-  addClient: (client) ->
+  edit: (options, callback) ->
+    @engine.db.updateUser @id, options, (row) =>
+      @updateAttributes(row)
+      callback(row)
+
+  updateAttributes: (options) ->
+    @is_admin = !!options.is_admin
+
+  asJson: ->
+    id: @id
+    name: @name
+    is_admin: @is_admin
+
+  addClient: (client, inbandBacklog) ->
     client.sendQueue = new WorkingQueue(1)
     @clients.push(client)
 
@@ -94,13 +107,17 @@ class User
       name: @name
       is_admin: @is_admin
 
-    unless @inbandBacklog
+    unless inbandBacklog
       # {"bid":-1,"eid":-1,"type":"oob_include","time":1340156453,"highlight":false,"url":"/chat/oob-loader?key=e82d5ead-bfbd-4a55-94c8-c145798a3520"}
       @send client,
         type: 'oob_include'
         url:  '/chat/backlog'
     else
       @sendBacklog(client)
+
+  removeClient: (client) ->
+    client.close()
+    @clients.splice(@clients.indexOf(client), 1)
 
   send: (client, message, cb) ->
     message = @prepareMessage(message)
@@ -175,6 +192,22 @@ class User
       callback
         type: 'backlog_complete'
       done() if done
+
+    queue.doneAddingJobs()
+
+  delete: (cb) ->
+    queue = new WorkingQueue(1)
+
+    @removeClient client for client in @clients
+
+    for conn in @connections
+      do (conn) =>
+        queue.perform (over) =>
+          @removeConnection conn, over
+
+    queue.onceDone =>
+      @engine.db.deleteUser @id, =>
+        cb() if cb
 
     queue.doneAddingJobs()
 

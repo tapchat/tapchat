@@ -203,17 +203,57 @@
         <button class="btn btn-edit">Edit</button>
         <button class="btn btn-danger btn-remove">Remove</button>
     </script>
+
+    <script type="text/html" id="Admin">
+      <ul class="nav nav-tabs">
+        <li class="active"><a href="#usersAdminTab" data-toggle="tab">Users</a></li>
+      </ul>
+      <div class="tab-content">
+        <div class="tab-pane active" id="usersAdminTab">
+          <button id="btn-admin-add-user" class="btn">Add User</button>
+          <ul id="admin-users-list"></ul>
+        </div>
+      </div>
+    </script>
+
+    <script type="text/html" id="AdminEditUserDialog">
+      <div id="add-user">
+        <form class="form-horizontal">
+          <fieldset>
+            <div class="control-group">
+              <label class="control-label">Name</label>
+              <div class="controls">
+                <input type="text" class="input-medium" name="name">
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label">Password</label>
+              <div class="controls">
+                <input type="password" class="input-medium" name="password" />
+              </div>
+            </div>
+            <div class="control-group">
+              <div class="controls">
+                <label class="checkbox">
+                  <input type="checkbox" name="is_admin"> Admin
+                </label>
+              </div>
+            </div>
+          </fieldset>
+        </form>
+      </div>
+    </script>
   </head>
   <body>
     <div id="app">
       <div id="nav">
         <div id="logo">
           <img src="/img/logo.png" style="width: 30px">
-          TapChat
+          <span class="page-title"></span>
         </div>
 
         <div class="left">
-          <button id="main-menu-button" class="btn dropdown-toggle" data-toggle="dropdown"><span id="title"></span> <b class="caret"></b></button>
+          <button id="main-menu-button" class="btn dropdown-toggle" data-toggle="dropdown"><span class="page-title"></span> <b class="caret"></b></button>
           <ul id="main-menu" class="dropdown-menu">
             <li class="divider"></li>
             <li><a href="#" id="settings-item"><i class="icon-wrench"></i> Settings</a></li>
@@ -229,7 +269,7 @@
               <i class="icon-user"></i>&nbsp;<span class="username"></span> <span class="caret"></span>
             </a>
             <ul class="dropdown-menu dropdown-menu-arrow">
-              <li id="admin-item" class="hide"><a href="/admin" target="_new">Admin</a></li>
+              <li id="admin-item" class="hide"><a href="#" target="_new">Admin</a></li>
               <li><a href="#" id="logout-btn">Logout</a></li>
             </ul>
           </div>

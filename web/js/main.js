@@ -13,6 +13,9 @@ $(function () {
   window.app.settings = new SettingsView();
   $('#pages').append(window.app.settings.el);
 
+  window.app.admin = new AdminView();
+  $('#pages').append(window.app.admin.el);
+
   Backbone.history.start();
 
   var session = $.cookie('session');
@@ -24,6 +27,10 @@ $(function () {
 
   $('#settings-item').tappable(function () {
     app.controller.navigate('settings', { trigger: true });
+  });
+
+  $('#admin-item').tappable(function() {
+    app.controller.navigate('admin', { trigger: true });
   });
 
   $('#settings-btn').tappable(function () {

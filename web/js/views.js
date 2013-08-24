@@ -92,7 +92,13 @@ var AppView = Backbone.View.extend({
   },
 
   setTitle: function (text) {
-    $('#title').html(text);
+    if (_.isEmpty(text)) {
+      $('.page-title').html('TapChat');
+      document.title = 'TapChat';
+    } else {
+      $('.page-title').html(text);
+      document.title = text + ' - TapChat';
+    }
   },
 
   showAddNetworkDialog: function () {
@@ -407,7 +413,7 @@ var MainMenuView = Backbone.View.extend({
 
 var SettingsView = Backbone.View.extend({
   id: 'page-settings',
-  className: 'page',
+  className: 'page page-full',
 
   initialize: function (options) {
     $(this.el).append(ich.Settings);
@@ -457,6 +463,79 @@ var SettingsView = Backbone.View.extend({
 
   getTitle: function() {
     return 'Settings';
+  }
+});
+
+var AdminView = Backbone.View.extend({
+  id: 'page-admin',
+  className: 'page page-full',
+
+  events: {
+    'click #btn-admin-add-user': 'showAddUserDialog'
+  },
+
+  initialize: function (options) {
+    app.view.on('page-changed', this.pageChanged, this);
+    app.on('users-changed', this.loadUsers, this);
+    $(this.el).append(ich.Admin);
+  },
+
+  render: function() {
+    var list = this.$('#admin-users-list');
+    list.html('');
+    if (this.users) {
+      this.users.forEach(function(user) {
+        var editLink = $('<a>').attr('href', '#').html('Edit');
+        editLink.tappable(function() {
+          new AdminEditUserDialog({model: user}).show();
+        });
+
+        var deleteLink = $('<a>').attr('href', '#').html('Delete');
+        deleteLink.tappable(function() {
+          if (confirm("Are you sure?")) {
+            $.ajax('/admin/users/' + user.id, { type: 'DELETE' })
+              .success(function(data) {
+                app.trigger('users-changed');
+              })
+              .error(function(res) {
+                alert(res.responseText);
+             });
+          }
+        });
+
+        var li = $('<li>');
+        li.append(user.name);
+        li.append(' &mdash; ');
+        li.append(editLink);
+        li.append('&nbsp;');
+        li.append(deleteLink);
+        list.append(li);
+      });
+    }
+    return this;
+  },
+
+  getTitle: function() {
+    return 'Admin';
+  },
+
+  loadUsers: function() {
+    var self = this;
+    console.log('get users!');
+    $.getJSON('/admin/users', function(users) {
+      self.users = users;
+      self.render();
+    });
+  },
+
+  showAddUserDialog: function() {
+    new AdminEditUserDialog().show();
+  },
+
+  pageChanged: function(page) {
+    if (page === this) {
+      this.loadUsers();
+    }
   }
 });
 
@@ -693,5 +772,101 @@ var JoinChannelDialog = Backbone.View.extend({
 
     var network = app.networkList.get(networkId);
     network.join(channel);
+  }
+});
+
+var AdminEditUserDialog = Backbone.View.extend({
+  events: {
+  },
+
+  render: function () {
+    $(this.el).empty();
+    $(this.el).append(ich.AdminEditUserDialog());
+
+    if (this.model) {
+      var nameInput = this.$('input[name=name]');
+      nameInput.attr('disabled', true);
+      nameInput.val(this.model.name);
+      this.$('input[name=is_admin]').attr('checked', this.model.is_admin);
+    }
+
+    return this;
+  },
+
+  show: function () {
+    var self = this;
+    this.dialog = bootbox.dialog(this.render().el,
+      [
+        {
+          "label": this.model ? 'Save User' : 'Add User',
+          "class": "btn-primary",
+          callback: function () { return self.onSubmit(); }
+        },
+        {
+          "label": "Cancel",
+          "class": "btn"
+        }
+      ],
+      {
+        header: this.model ? 'Edit User' : 'Add User',
+        animate: false,
+        backdrop: "static"
+      }
+    );
+    if (this.model) {
+      this.dialog.find('input[name=password]').focus(); 
+    } else {
+      this.dialog.find('input[name=name]').focus(); 
+    }
+  },
+
+  onSubmit: function () {
+    var form = $(this.dialog.find('form'));
+
+    if (!this.model) {
+      var valid = _.reduce(form.find('input[type=text],input[type=password]'), function (valid, input) {
+        input = $(input);
+        if (_.isEmpty(input.val())) {
+          input.addClass('error');
+          return false;
+        } else {
+          input.removeClass('error');
+          return valid && true;
+        }
+      }, true);
+
+      if (!valid) {
+        return false;
+      }
+    }
+
+    var data = {
+      name: $('input[name=name]', form).val(),
+      password: $('input[name=password]', form).val(),
+      is_admin: $('input[name=is_admin]', form).attr('checked') == 'checked'
+    };
+
+    var self = this;
+
+    if (this.model) {
+      $.ajax('/admin/users/' + this.model.id, { type: 'PUT', data: data })
+        .success(function(data) {
+          self.dialog.modal('hide');
+          app.trigger('users-changed');
+        })
+        .error(function(res) {
+          alert(res.responseText);
+       });
+    } else {
+      $.post('/admin/users', data, function(data) {
+        self.dialog.modal('hide');
+        app.trigger('users-changed');
+      })
+      .error(function(res) {
+        alert(res.responseText);
+     });
+    }
+
+    return false;
   }
 });

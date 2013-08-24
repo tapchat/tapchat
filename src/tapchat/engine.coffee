@@ -1,7 +1,7 @@
 #
 # engine.coffee
 #
-# Copyright (C) 2012 Eric Butler <eric@codebutler.com>
+# Copyright (C) 2012-2013 Eric Butler <eric@codebutler.com>
 #
 # This file is part of TapChat.
 #
@@ -95,6 +95,22 @@ class Engine
         str = Eco.render(str, options)
         fn(null, str)
 
+    restrict = (req, res, next) =>
+      session = @sessions.get(req.cookies.session)
+      unless session
+        res.send(401, 'Unauthorized')
+      else
+        req.session = session
+        req.user = @users[session.uid]
+        return next()
+
+    restrict_admin = (req, res, next) ->
+      restrict req, res, =>
+        unless req.user.is_admin
+          res.send(401, 'Unauthorized')
+        else
+          return next()
+
     @app.get '/', (req, res) =>
       res.render 'index.html'
 
@@ -124,23 +140,12 @@ class Engine
 
       auth(req, res)
 
-    @app.post '/chat/logout', (req, res) =>
-      session_id = req.cookies.session
-      unless @sessions.get(session_id)
-        req.socket.end('HTTP/1.1 401 Unauthorized\r\n\r\n');
-        return next()
-
-      @sessions.destroy(session_id)
-
+    @app.post '/chat/logout', restrict, (req, res) =>
+      @sessions.destroy(req.cookies.session)
       res.json
         success: true
 
-    @app.post '/chat/change-password', (req, res) =>
-      session = @sessions.get(req.cookies.session)
-      unless session
-        req.socket.end('HTTP/1.1 401 Unauthorized\r\n\r\n');
-        return next()
-
+    @app.post '/chat/change-password', restrict, (req, res) =>
       oldpassword = req.body.oldpassword
       newpassword = req.body.newpassword
 
@@ -151,7 +156,7 @@ class Engine
           400
         return
 
-      @db.selectUser session.uid, (userInfo) =>
+      @db.selectUser req.session.uid, (userInfo) =>
         unless PasswordHash.verify(oldpassword, userInfo.password)
           res.json
             success: false
@@ -159,19 +164,14 @@ class Engine
             400
           return
 
-        @db.updateUser session.uid,
+        @db.updateUser req.session.uid,
           password_hash: PasswordHash.generate(newpassword),
           (row) =>
             res.json
               success: true
 
-    @app.get '/chat/backlog', (req, res) =>
-      session = @sessions.get(req.cookies.session)
-      unless session
-        req.socket.end('HTTP/1.1 401 Unauthorized\r\n\r\n');
-        return next()
-
-      user = @users[session.uid]
+    @app.get '/chat/backlog', restrict, (req, res) =>
+      user = req.user
 
       events = []
 
@@ -180,25 +180,56 @@ class Engine
       ), ->
         res.json(events)
 
+    @app.get '/admin/users', restrict_admin, (req, res) =>
+      user = req.user
+      users = (user.asJson() for uid,user of @users)
+      res.json(users)
+
+    @app.post '/admin/users', restrict_admin, (req, res) =>
+      name     = req.body.name
+      password = req.body.password
+      isAdmin  = req.body.is_admin == 'true'
+
+      @db.insertUser name, PasswordHash.generate(password), isAdmin, (row) =>
+        user = @addUser(row)
+        res.json
+          success: true
+          user: user.asJson()
+
+    @app.put '/admin/users/:user_id', restrict_admin, (req, res) =>
+      user = @users[req.param('user_id')]
+      user.edit
+        password_hash: PasswordHash.generate(req.body.password)
+        is_admin: if req.body.is_admin == 'true' then 1 else 0,
+        =>
+          res.json
+            success: true
+
+    @app.delete '/admin/users/:user_id', restrict_admin, (req, res) =>
+      user = @users[req.param('user_id')]
+      @deleteUser user, =>
+        for session_id, session of @sessions.all()
+          if session.uid == user.id
+            @sessions.destroy(session_id)
+        res.json
+          success: true
+
     @web = Https.createServer
       key:  Fs.readFileSync(Config.getCertFile())
       cert: Fs.readFileSync(Config.getCertFile()),
       @app
 
-    @web.addListener 'upgrade', (request, socket, head) =>
-      request.method = 'UPGRADE' # Prevent any matching GET handlers from running
-      res = new Http.ServerResponse(request)
-      @app.handle request, res, =>
-        session = @sessions.get(request.cookies.session)
-        if session
-          ws = new WebSocket(request, socket, head)
-          user = @users[session.uid]
-          user.inbandBacklog = request.param('inband', false)
-          user.addClient(ws)
-          Log.debug 'websocket client: connected'
-        else
-          Log.info 'websocket client: unauthorized'
-          request.socket.end('HTTP/1.1 401 Unauthorized\r\n\r\n')
+    @web.addListener 'upgrade', (req, socket, head) =>
+      req.method = 'UPGRADE' # Prevent any matching GET handlers from running
+      res = new Http.ServerResponse(req)
+      @app.handle req, res, =>
+        session = @sessions.get(req.cookies.session)
+        unless session
+          req.socket.end('HTTP/1.1 401 Unauthorized\r\n\r\n')
+          return
+        user = @users[session.uid]
+        ws = new WebSocket(req, socket, head)
+        user.addClient(ws, req.param('inband', false))
 
     @web.listen port, =>
       console.log "\nTapChat ready at https://localhost:#{port}\n"
@@ -207,5 +238,10 @@ class Engine
   addUser: (userInfo) ->
     user = new User(this, userInfo)
     @users[user.id] = user
+
+  deleteUser: (user, cb) ->
+    user.delete =>
+      @users.splice(@users.indexOf(user), 1)
+      cb() if cb
 
 module.exports = Engine

@@ -346,6 +346,9 @@ body {
 }
 
 @media only screen and (max-width: 640px) {
+  #logo {
+    display: none;
+  }
   #sidebar:not(.show) {
     display: none;
   }
@@ -379,7 +382,7 @@ body {
   margin-bottom: 9px;
 }
 
-#page-settings {
+.page-full {
   position: absolute;
   height: 100%;
   width: 100%;
@@ -395,11 +398,11 @@ body {
   -webkit-box-sizing: border-box;
  }
 
- #page-settings .tab-content {
+ .page-full .tab-content {
   padding: 0 10px;
  }
 
- #page-settings ul.nav-tabs {
+ .page-full ul.nav-tabs {
   padding-top: 10px;
   padding-left: 10px;
  }
@@ -501,4 +504,8 @@ input.error:focus, select.error:focus, textarea.error:focus {
 .btn-group.pull-right > .dropdown-menu-arrow::after {
     left: inherit;
     right: 10px;
+}
+
+#page-admin #admin-users-list {
+  padding: 1em 0 0 0;
 }

@@ -2,6 +2,7 @@ var Router = Backbone.Router.extend({
   routes: {
     '':                     'index',
     'settings':             'settings',
+    'admin':                'admin',
     ':networkId':           'network',
     ':networkId/:bufferId': 'buffer'
   },
@@ -12,6 +13,10 @@ var Router = Backbone.Router.extend({
 
   settings: function () {
     app.view.showPage(app.settings);
+  },
+
+  admin: function() {
+    app.view.showPage(app.admin);
   },
 
   network: function (networkId) {

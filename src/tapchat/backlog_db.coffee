@@ -130,10 +130,11 @@ class BacklogDB
     sql = Squel.update().table('users')
     sql.where('uid = $uid')
 
-    setAttribute = (name, value) =>
-      sql.set name, value if value && value != undefined
+    setAttribute = (name, options, key) =>
+      sql.set name, options[key] if _.has(options, key)
 
-    setAttribute 'password', options.password_hash
+    setAttribute 'password', options, 'password_hash'
+    setAttribute 'is_admin', options, 'is_admin'
 
     @db.run sql.toString(),
       $uid: uid,
@@ -214,6 +215,13 @@ class BacklogDB
         $cid: cid
         $bid: bid
       @db.run 'COMMIT', (err) =>
+        throw err if err
+        callback()
+
+  deleteUser: (uid, callback) ->
+    @db.run 'DELETE FROM users WHERE uid = $uid',
+      $uid: uid,
+      (err) =>
         throw err if err
         callback()
 
