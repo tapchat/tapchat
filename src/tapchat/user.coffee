@@ -111,6 +111,7 @@ class User
       id: @id
       name: @name
       is_admin: @is_admin
+      num_active_connections: 0 # FIXME
 
     unless inbandBacklog
       # {"bid":-1,"eid":-1,"type":"oob_include","time":1340156453,"highlight":false,"url":"/chat/oob-loader?key=e82d5ead-bfbd-4a55-94c8-c145798a3520"}

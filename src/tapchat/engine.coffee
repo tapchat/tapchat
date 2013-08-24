@@ -109,6 +109,7 @@ class Engine
       res.render 'index.html'
 
     @app.post '/chat/login', (req, res) =>
+      req.body.username = req.body.email if req.body.email?
       req.body.username = 'user' unless req.body.username?
       auth = Passport.authenticate 'local', (err, user, info) =>
         return next(err) if err
