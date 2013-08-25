@@ -380,45 +380,53 @@ class Connection extends EventEmitter
 
         buffer.setMembers(nicks)
         @emit 'event', B.channelInit(buffer)
-        over()
+      over()
 
     '+mode': (channel, from, mode, to, raw, over) ->
-      if buffer = @getBuffer(channel)
-        if member = buffer.getMember(to)
-          member.addMode(mode)
-          buffer.addEvent
-            type: 'user_channel_mode'
-            from: from
-            nick: to
-            newmode: member.mode
-            diff: "+#{mode}"
-            channel: channel
-            ops:
-              add: [
-                mode: mode
-                param: to
-              ]
-              remove: [],
-            over
+      unless buffer = @getBuffer(channel)
+        return over()
+
+      unless member = buffer.getMember(to)
+        return over()
+
+      member.addMode(mode)
+      buffer.addEvent
+        type: 'user_channel_mode'
+        from: from
+        nick: to
+        newmode: member.mode
+        diff: "+#{mode}"
+        channel: channel
+        ops:
+          add: [
+            mode: mode
+            param: to
+          ]
+          remove: [],
+        over
 
     '-mode': (channel, from, mode, to, raw, over) ->
-      if buffer = @getBuffer(channel)
-        if member = buffer.getMember(to)
-          member.delMode(mode)
-          buffer.addEvent
-            type: 'user_channel_mode'
-            from: from
-            nick: to
-            newmode: member.mode
-            diff: "-#{mode}"
-            channel: channel
-            ops:
-              add: []
-              remove: [
-                mode: mode
-                param: to
-              ],
-            over
+      unless buffer = @getBuffer(channel)
+        return over()
+
+      unless member = buffer.getMember(to)
+        return over()
+
+        member.delMode(mode)
+        buffer.addEvent
+          type: 'user_channel_mode'
+          from: from
+          nick: to
+          newmode: member.mode
+          diff: "-#{mode}"
+          channel: channel
+          ops:
+            add: []
+            remove: [
+              mode: mode
+              param: to
+            ],
+          over
 
     topic: (channel, topic, nick, message, over) ->
       if buffer = @getBuffer(channel)
@@ -523,16 +531,23 @@ class Connection extends EventEmitter
       queue.doneAddingJobs()
 
     kill: (nick, reason, channels, message, over) ->
+      queue = new WorkingQueue(1)
+
       for name in [ nick ].concat(channels)
-        if buffer = @getBuffer(name)
-          buffer.removeMember(nick)
-          buffer.addEvent
-            type:   'kill'
-            from:   nick,
-            reason: message,
-            over
-        else
-          over()
+        do (name) =>
+          queue.perform (bufferOver) =>
+            if buffer = @getBuffer(name)
+              buffer.removeMember(nick)
+              buffer.addEvent
+                type:   'kill'
+                from:   nick,
+                reason: message,
+                bufferOver
+            else
+              bufferOver()
+
+      queue.onceDone over
+      queue.doneAddingJobs()
 
     selfMessage: (to, text, over) ->
       if to.match(/^[&#]/)
@@ -549,7 +564,7 @@ class Connection extends EventEmitter
           over()
       else
         @getOrCreateBuffer to, 'conversation', (buffer) =>
-          over() unless buffer
+          return over() unless buffer
           buffer.unarchive =>
             buffer.addEvent
               type:      'buffer_msg'
