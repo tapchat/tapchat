@@ -101,6 +101,9 @@ class Connection extends EventEmitter
   say: (to, text) ->
     @client.say(to, text)
 
+  action: (to, text) ->
+    @client.action(to, text)
+
   join: (chan) ->
     @client.join(chan)
 
@@ -549,11 +552,11 @@ class Connection extends EventEmitter
       queue.onceDone over
       queue.doneAddingJobs()
 
-    selfMessage: (to, text, over) ->
+    selfMessageOrAction: (type, to, text, over) ->
       if to.match(/^[&#]/)
         if buffer = @getBuffer(to)
           buffer.addEvent
-            type:      'buffer_msg'
+            type:      type
             from:      @getNick()
             chan:      to
             msg:       text
@@ -567,12 +570,18 @@ class Connection extends EventEmitter
           return over() unless buffer
           buffer.unarchive =>
             buffer.addEvent
-              type:      'buffer_msg'
+              type:      type
               from:      @getNick()
               msg:       text
               highlight: false
               self:      true,
               over
+
+    selfMessage: (to, text, over) ->
+      @signalHandlers.selfMessageOrAction.apply(this, ['buffer_msg', to, text, over])
+
+    selfAction: (to, text, over) ->
+      @signalHandlers.selfMessageOrAction.apply(this, ['buffer_me_msg', to, text, over])
 
     message: (nick, to, text, message, over) ->
       if to.match(/^[&#]/)

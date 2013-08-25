@@ -257,8 +257,11 @@ class User
         return
 
       if text
-        # selfMessage event will take care of opening the buffer.
-        conn.say(to, text)
+        if text.indexOf('/me ') == 0
+          conn.action(to, text.substring(4))
+        else
+          # selfMessage event will take care of opening the buffer.
+          conn.say(to, text)
         return
 
       # No message, so just open the buffer.
