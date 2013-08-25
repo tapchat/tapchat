@@ -170,6 +170,18 @@ body {
   display: block;
 }
 
+#users ul li.mode-o a:before {
+  content: '@';
+}
+
+#users ul li.mode-h a:before {
+  content: '%';
+}
+
+#users ul li.mode-v a:before {
+  content: '+';
+}
+
 #networks li a:hover, #users ul li:hover {
   background: #f8f8f8;
 }

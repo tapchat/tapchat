@@ -289,7 +289,9 @@ var MemberListRowView = Backbone.View.extend({
   },
 
   render: function () {
-    $(this.el).attr('class', this.model.get('op') ? 'op' : '');
+    if (this.model.has('mode')) {
+      $(this.el).attr('class', 'mode-' + this.model.get('mode'));
+    }
 
     var data = this.model.toJSON();
     data.url = "javascript:alert('not implemented')"; // FIXME

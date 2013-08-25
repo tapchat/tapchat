@@ -20,6 +20,17 @@
 
 ChatBuffer = require('./chat_buffer')
 
+class ChannelMember
+  constructor: (nick, mode) ->
+    @nick = nick
+    @mode = mode
+
+  addMode: (mode) ->
+    @mode += mode unless @mode.indexOf(mode) >= 0
+
+  delMode: (mode) ->
+    @mode = @mode.replace(mode, '')
+
 class ChannelBuffer extends ChatBuffer
   type: 'channel'
   members: {}
@@ -38,20 +49,25 @@ class ChannelBuffer extends ChatBuffer
 
   setMembers: (nicks) ->
     @members = {}
-    @addMember(nick) for nick in nicks
 
-  addMember: (nick) ->
-    @members[nick] =
-      nick:     nick
-      realName: '' # FIXME
-      host:     '' # FIXME
+    for nick,mode of nicks
+      @addMember(nick, mode)
+
+  addMember: (nick, mode) ->
+    @members[nick] = new ChannelMember(nick, mode)
 
   renameMember: (oldNick, newNick) ->
-    @removeMember(oldNick)
-    @addMember(newNick)
+    member = @members[oldNick]
+    delete members[oldNick]
+
+    member.nick = newNick
+    @members[newNick] = member
 
   removeMember: (nick) ->
     delete @members[nick]
+
+  getMember: (nick) ->
+    @members[nick]
 
   archive: (callback) ->
     return callback() if this instanceof ChannelBuffer and @isJoined

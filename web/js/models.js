@@ -18,6 +18,10 @@ var Buffer = Backbone.Model.extend({
 
     this.trigger('event', message);
 
+    if (!message.is_backlog && !this.isBacklog && this.nonBacklogMessageHandlers[type]) {
+      this.nonBacklogMessageHandlers[type].apply(this, [ message ]);
+    }
+
     if (this.messageHandlers[type]) {
       this.messageHandlers[message.type].apply(this, [ message ]);
     }
@@ -313,4 +317,22 @@ var Network = Backbone.Model.extend({
 });
 
 var Member = Backbone.Model.extend({
+  updateMode: function(message) {
+    var mode = this.get('mode');
+
+    var ops = message.ops;
+    if ('add' in message.ops) {
+      message.ops.add.forEach(function(op) {
+        mode += op.mode;
+      });
+    }
+
+    if ('remove' in message.ops) {
+      message.ops.remove.forEach(function(op) {
+        mode = mode.replace(op.mode, '');
+      });
+    }
+
+    this.set('mode', mode);
+  }
 });

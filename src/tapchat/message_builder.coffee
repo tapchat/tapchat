@@ -80,6 +80,7 @@ module.exports =
       nick:     member.nick
       realname: member.realName
       usermask: member.host
+      mode:     member.mode
 
   deleteBuffer: (buffer) ->
     type: 'delete_buffer'

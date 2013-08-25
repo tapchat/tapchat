@@ -373,9 +373,52 @@ class Connection extends EventEmitter
 
     names: (channel, nicks, over) ->
       if buffer = @getBuffer(channel)
-        buffer.setMembers(_.keys(nicks))
+        # irc.js should probably do this...
+        nicks = _.clone(nicks)
+        for nick,mode of nicks
+          nicks[nick] = @client.modeForPrefix[mode] unless _.isEmpty(mode)
+
+        buffer.setMembers(nicks)
         @emit 'event', B.channelInit(buffer)
         over()
+
+    '+mode': (channel, from, mode, to, raw, over) ->
+      if buffer = @getBuffer(channel)
+        if member = buffer.getMember(to)
+          member.addMode(mode)
+          buffer.addEvent
+            type: 'user_channel_mode'
+            from: from
+            nick: to
+            newmode: member.mode
+            diff: "+#{mode}"
+            channel: channel
+            ops:
+              add: [
+                mode: mode
+                param: to
+              ]
+              remove: [],
+            over
+
+    '-mode': (channel, from, mode, to, raw, over) ->
+      if buffer = @getBuffer(channel)
+        if member = buffer.getMember(to)
+          member.delMode(mode)
+          buffer.addEvent
+            type: 'user_channel_mode'
+            from: from
+            nick: to
+            newmode: member.mode
+            diff: "-#{mode}"
+            channel: channel
+            ops:
+              add: []
+              remove: [
+                mode: mode
+                param: to
+              ],
+            over
 
     topic: (channel, topic, nick, message, over) ->
       if buffer = @getBuffer(channel)
