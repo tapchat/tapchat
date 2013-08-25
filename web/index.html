@@ -19,6 +19,7 @@
     <script type="text/javascript" src="js/lib/bootbox.js"></script>
     <script type="text/javascript" src="js/lib/jquery.tappable.js"></script>
     <script type="text/javascript" src="js/lib/scrollfix.js"></script>
+    <script type="text/javascript" src="js/lib/date.format.js"></script>
     <script type="text/javascript" src="js/util.js"></script>
     <script type="text/javascript" src="js/app.js"></script>
     <script type="text/javascript" src="js/models.js"></script>
@@ -38,14 +39,6 @@
 
     <script type="text/html" id="MemberListRowView">
       <a href="{{url}}" title="{{nick}}">{{nick}}</a>
-    </script>
-
-    <script type="text/html" id="buffer_event">
-      <div class="event event_{{type}}">
-        <span class="when">{{datetime.hours}}:{{datetime.minutes}}:{{datetime.seconds}}</span>
-        <span class="who">{{from}}</span>
-        <span class="message">{{msg}}</span>
-      </div>
     </script>
 
     <script type="text/html" id="BufferView">
@@ -247,12 +240,11 @@
   <body>
     <div id="app">
       <div id="nav">
-        <div id="logo">
-          <img src="/img/logo.png" style="width: 30px">
-          <span class="page-title"></span>
-        </div>
-
         <div class="left">
+          <div id="logo">
+            <img src="/img/logo.png" style="width: 30px">
+            <span class="page-title"></span>
+          </div>
           <button id="main-menu-button" class="btn dropdown-toggle" data-toggle="dropdown"><span class="page-title"></span> <b class="caret"></b></button>
           <ul id="main-menu" class="dropdown-menu">
             <li class="divider"></li>

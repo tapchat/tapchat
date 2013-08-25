@@ -1,31 +1,30 @@
 var BUFFER_EVENTS = {
-  "socket_closed":         "Disconnected",
-  "connecting":            "Connecting",
-  "quit_server":           "Quit server",
-  "notice":                "{{msg}}",
-  "error":                 "Error: {{msg}}",
-  "you_nickchange":        "You are now known as {{newnick}}",
-  "banned":                "You were banned",
-  "connecting_retry":      "Retrying connection in {{interval}} seconds",
-  "connecting_failed":     "Failed to connect",
-  "connected":             "Connected to {{hostname}}",
-  "joining":               "Joining {{channels}}",
-  "user_mode":             "Your mode is +{{newmode}}",
-  "joined_channel":        "{{nick}} has joined",
-  "parted_channel":        "{{nick}} has left",
-  "quit":                  "{{nick}} has quit",
-  "away":                  "{{nick}} is away",
-  "kicked_channel":        "{{nick}} was kicked from {{chan}} by {{kicker}}: {{msg}}",
-  "you_joined_channel":    "You have joined",
-  "you_parted_channel":    "You have left",
-  "channel_mode_is":       "Mode is: {{newmode}}",
-  "channel_timestamp":     "Created at: {{timestamp}}",
-  "nickchange":            "{{oldnick}} is now known as {{newnick}}",
-  "user_channel_mode":     "Mode {{diff}} {{nick}} by {{from}}",
-  "channel_url":           "Channel URL: {{url}}",
-  "channel_topic":         "Topic is: {{topic}}",
-  "channel_topic_cleared": "{{nick}} cleared the topic",
-  "channel_mode":          "Channel mode: {{diff}} by {{from}}"
+  "socket_closed":      "Disconnected",
+  "connecting":         "Connecting",
+  "connected":          "Connected to {{hostname}}",
+  "quit_server":        "Quit server",
+  "notice":             "{{msg}}",
+  "you_nickchange":     "You are now known as {{newnick}}",
+  "banned":             "You were banned",
+  "connecting_retry":   "Retrying connection in {{interval}} seconds",
+  "waiting_to_retry":   "Reconnecting in {{interval}} seconds",
+  "connecting_failed":  "Failed to connect",
+  "joining":            "Joining {{channels}}",
+  "user_mode":          "Your mode is +{{newmode}}",
+  "joined_channel":     "{{nick}} has joined",
+  "parted_channel":     "{{nick}} has left",
+  "quit":               "{{nick}} has quit",
+  "away":               "{{nick}} is away",
+  "kicked_channel":     "{{nick}} was kicked from {{chan}} by {{kicker}}: {{msg}}",
+  "you_joined_channel": "You have joined",
+  "you_parted_channel": "You have left",
+  "channel_mode_is":    "Mode is: {{newmode}}",
+  "channel_timestamp":  "Created at: {{timestamp}}",
+  "nickchange":         "{{oldnick}} is now known as {{newnick}}",
+  "user_channel_mode":  "Mode {{diff}} {{nick}} by {{from}}",
+  "channel_url":        "Channel URL: {{url}}",
+  "channel_topic":      "{{nick}} set the topic: {{topic}}",
+  "channel_mode":       "Channel mode: {{diff}} by {{from}}"
 };
 
 var AppView = Backbone.View.extend({
@@ -349,28 +348,44 @@ var BufferView = Backbone.View.extend({
   },
 
   addEvent: function (event) {
-    var text;
+    var msg;
 
     var template = BUFFER_EVENTS[event.type];
     if (template) {
-      text = _.template(template, event);
+      msg = _.template(template, event);
     } else if (event.msg) {
-      text = event.msg;
+      msg = event.msg;
     }
 
-    if (text) {
-      var rendered = ich.buffer_event({
-        datetime: Util.explodeDateTime(new Date(event.time*1000)),
-        from:     event.nick || event.from,
-        msg:      text,
-        type:     event.type
-      });
-      $(rendered).find('a').linkify({
-        handleLinks: function (links) {
+    var timestamp = new Date(event.time*1000).format("shortTime");
+    var from      = event.nick || event.from;
+    var type      = event.type;
+
+    if (msg) {
+      var eventDiv = $('<div>')
+        .addClass('event')
+        .addClass('event_'+type)
+        .append($('<span>').addClass('when').text(timestamp));
+
+      var linkifyCfg = {
+        handleLinks: function(links) {
           return links.prop('target', '_new');
         }
-      });
-      $(this.el).find('.events').append(rendered);
+      };
+
+      if (type == 'buffer_msg') {
+        eventDiv.append($('<span>')
+          .append($('<span>').addClass('who').text(from))
+          .append($('<span>').text(msg).linkify(linkifyCfg)));
+      } else if (type == 'buffer_me_msg') {
+        eventDiv.append($('<span>')
+          .append($('<span>').addClass('who').text('• ' + from))
+          .append($('<span>').text(msg).linkify(linkifyCfg)));
+      } else {
+        eventDiv.append($('<span>').addClass('message').text(msg));
+      }
+
+      $(this.el).find('.events').append(eventDiv);
 
       this.scrollToBottom();
     }

@@ -73,16 +73,7 @@ body {
 }
 
 #nav #logo {
-  position: absolute;
-  width: 100%;
-  padding-left: 10px;
-
-  -o-box-sizing: border-box;
-  -icab-box-sizing: border-box;
-  -khtml-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  -webkit-box-sizing: border-box;
-  box-sizing: border-box;
+  display inline-block;
 }
 
 #pages {
@@ -255,8 +246,6 @@ body {
 
 .events-outer {
   width: 100%;
-  background-color: #f8f8fa;
-  font-size: 9pt;
   color: #555;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
@@ -322,22 +311,20 @@ body {
   margin-bottom: 0px;
   overflow: auto;
 }
-.buffer .event:nth-child(even) {
-  background-color: #e8e8f1;
-}
 .buffer .event span {
   display: table-cell;
 }
 .buffer .event .who {
   font-weight: bold;
-  width: 110px;
+  color: #64A34E;
   text-align: right;
-  padding-right: 8px;
+  padding-right: 5px;
 }
 .buffer .event .message {
   font-size: 11pt;
   font-family: sans-serif;
-  color: #111;
+  font-style: italic;
+  color: #888888;
 }
 .buffer .event .header {
   padding-left: 118px;
@@ -347,12 +334,21 @@ body {
   display: none;
 }
 .buffer .event .when {
-  display: none;
+  font-size: 10px;
+  padding-right: 10px;
+  width: 50px;
+  text-align: right;
+  color: #666666;
 }
 
 .buffer .event_server_motd .message {
   white-space: pre;
   font-family: monospace;
+}
+
+.buffer .event.event_buffer_msg .message {
+  font-style: normal;
+  color: black;
 }
 
 @media only screen and (max-width: 640px) {
