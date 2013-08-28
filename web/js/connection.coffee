@@ -40,6 +40,12 @@ class Connection extends Backbone.Model
       msg: text,
       callback
 
+  deleteConnection: (callback) ->
+    @post
+      _method: 'delete-connection'
+      cid:     @id,
+      callback
+
   post: (message, callback) ->
     message.cid = @id
     @client.post message, callback
@@ -170,6 +176,7 @@ class Connection extends Backbone.Model
     delete_buffer: (message) ->
       if buffer = @buffers.get(message.bid)
         @buffers.remove(buffer)
+        buffer.stopListening()
         buffer.destroy()
 
     buffer_archived: (message) ->

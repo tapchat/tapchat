@@ -140,6 +140,7 @@ class TapchatClient
     connection_deleted: (message) ->
       if connection = @connections.get(message._cid)
         @connections.remove(connection)
+        connection.stopListening()
         connection.destroy()
 
     heartbeat_echo: (message) ->

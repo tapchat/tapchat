@@ -1,3 +1,5 @@
+Backbone.sync = ->
+
 _.templateSettings =
   interpolate : /\{\{(.+?)\}\}/g
 

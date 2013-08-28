@@ -14,6 +14,8 @@ class MemberList extends Backbone.Collection
   removeByNick: (nick) ->
     if member = @findByNick(nick)
       @remove(member)
+      member.stopListening()
+      member.destroy()
 
   updateNick: (message) ->
     if member = @findByNick(message.nick)

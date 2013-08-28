@@ -373,7 +373,7 @@ var BufferView = Backbone.View.extend({
   },
 
   addEvent: function (event) {
-    event = event.attributes;
+    event = event.items.first().attributes;
 
     var msg;
 
