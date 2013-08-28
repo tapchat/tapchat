@@ -27,14 +27,14 @@ var Router = Backbone.Router.extend({
     this.networkId = networkId;
     this.bufferId  = bufferId;
 
-    var network = app.networkList.get(networkId);
+    var network = app.client.connections.get(networkId);
     if (!network) {
       app.view.showPage(null);
       return;
     }
 
     if (!bufferId) {
-      this.bufferId = network.getConsoleBuffer().id;
+      this.bufferId = network.consoleBuffer.id;
     }
 
     if (this.networkId <= 0 || this.bufferId <= 0) {
@@ -42,7 +42,7 @@ var Router = Backbone.Router.extend({
       return;
     }
 
-    var buffer = network.bufferList.get(this.bufferId);
+    var buffer = network.buffers.get(this.bufferId);
     if (buffer) {
       app.view.showPage(buffer.view);
     } else {

@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="css/bootstrap.css" type="text/css" />
     <link rel="stylesheet" href="css/bootstrap-responsive.css" type="text/css" />
     <link rel="stylesheet" href="css/tapchat.css" type="text/css" />
+    
     <script type="text/javascript" src="js/lib/jquery-1.7.1.js"></script>
     <script type="text/javascript" src="js/lib/jquery.cookie.js"></script>
     <script type="text/javascript" src="js/lib/underscore.js"></script>
@@ -20,14 +21,27 @@
     <script type="text/javascript" src="js/lib/jquery.tappable.js"></script>
     <script type="text/javascript" src="js/lib/scrollfix.js"></script>
     <script type="text/javascript" src="js/lib/date.format.js"></script>
+    <script type="text/javascript" src="js/lib/coffee-script.js"></script>
     <script type="text/javascript" src="js/util.js"></script>
+    <script type="text/javascript" src="js/routers.js"></script>
+    <script type="text/javascript" src="js/views.js"></script>
+
+    <script type="text/coffeescript" src="js/buffer_event.coffee"></script>
+    <script type="text/coffeescript" src="js/buffer_event_item.coffee"></script>
+    <script type="text/coffeescript" src="js/buffer.coffee"></script>
+    <script type="text/coffeescript" src="js/console_buffer.coffee"></script>
+    <script type="text/coffeescript" src="js/conversation_buffer.coffee"></script>
+    <script type="text/coffeescript" src="js/channel_buffer.coffee"></script>
+    <script type="text/coffeescript" src="js/connection.coffee"></script>
+    <script type="text/coffeescript" src="js/collections.coffee"></script>
+    <script type="text/coffeescript" src="js/tapchat_client.coffee"></script>
+    <script type="text/coffeescript" src="js/main.coffee"></script>
+
+    <!--
     <script type="text/javascript" src="js/app.js"></script>
     <script type="text/javascript" src="js/models.js"></script>
     <script type="text/javascript" src="js/collections.js"></script>
-    <script type="text/javascript" src="js/views.js"></script>
-    <script type="text/javascript" src="js/routers.js"></script>
-    <script type="text/javascript" src="js/main.js"></script>
-
+    -->
     <script type="text/html" id="NetworkListRowView">
       <a class="tappable networkInfo">{{name}}</a>
       <ul class="bufferList unstyled"></ul>
@@ -42,17 +56,8 @@
     </script>
 
     <script type="text/html" id="BufferView">
-      <div class="topic">
-        <div class="left topic_text"></div>
-        <!--
-        <div class="right"><button class="btn dropdown-toggle" data-toggle="dropdown"><i class="icon-align-justify"></i></button>
-          <ul class="dropdown-menu pull-right">
-            <li><a href="#">Part Channel</a></li>
-            <li><a href="#">Archive Window</a></li>
-            <li><a href="#">Delete Window</a></li>
-          </ul>
-        </div>
-        -->
+      <div class="status">
+        <div class="left status-text"></div>
       </div>
       <div class="events-outer">
         <div class="events"></div>
@@ -240,30 +245,32 @@
   <body>
     <div id="app">
       <div id="nav">
+        <div style="">
         <div class="left">
           <div id="logo">
             <img src="/img/logo.png" style="width: 30px">
-            <span class="page-title"></span>
+            <span class="page-title page-title-text"></span>
+            <div class="page-topic"></div>
           </div>
           <button id="main-menu-button" class="btn dropdown-toggle" data-toggle="dropdown"><span class="page-title"></span> <b class="caret"></b></button>
           <ul id="main-menu" class="dropdown-menu">
             <li class="divider"></li>
-            <li><a href="#" id="settings-item"><i class="icon-wrench"></i> Settings</a></li>
           </ul>
         </div>
 
         <div class="right">
           <button id="join-btn" class="btn"><i class="icon-plus"></i><span> Join Channel</span></button>
           <button id="members-btn" class="btn" data-toggle="button"><i class="icon-th-list"></i></button>
-          <button id="settings-btn" class="btn"><i class="icon-wrench"></i></button>
           <div class="dropdown btn-group pull-right btn-group-user">
             <a id="user-btn" class="btn dropdown-toggle" data-toggle="dropdown" href="#" style="outline: 0">
               <i class="icon-user"></i>&nbsp;<span class="username"></span> <span class="caret"></span>
             </a>
             <ul class="dropdown-menu dropdown-menu-arrow">
               <li id="admin-item" class="hide"><a href="#" target="_new">Admin</a></li>
+              <li id="settings-item"><a href="#">Settings</a></li>
               <li><a href="#" id="logout-btn">Logout</a></li>
             </ul>
+          </div>
           </div>
         </div>
       </div>

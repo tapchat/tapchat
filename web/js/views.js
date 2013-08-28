@@ -1,42 +1,13 @@
-var BUFFER_EVENTS = {
-  "socket_closed":      "Disconnected",
-  "connecting":         "Connecting",
-  "connected":          "Connected to {{hostname}}",
-  "quit_server":        "Quit server",
-  "notice":             "{{msg}}",
-  "you_nickchange":     "You are now known as {{newnick}}",
-  "banned":             "You were banned",
-  "connecting_retry":   "Retrying connection in {{interval}} seconds",
-  "waiting_to_retry":   "Reconnecting in {{interval}} seconds",
-  "connecting_failed":  "Failed to connect",
-  "joining":            "Joining {{channels}}",
-  "user_mode":          "Your mode is +{{newmode}}",
-  "joined_channel":     "{{nick}} has joined",
-  "parted_channel":     "{{nick}} has left",
-  "quit":               "{{nick}} has quit",
-  "away":               "{{nick}} is away",
-  "kicked_channel":     "{{nick}} was kicked from {{chan}} by {{kicker}}: {{msg}}",
-  "you_joined_channel": "You have joined",
-  "you_parted_channel": "You have left",
-  "channel_mode_is":    "Mode is: {{newmode}}",
-  "channel_timestamp":  "Created at: {{timestamp}}",
-  "nickchange":         "{{oldnick}} is now known as {{newnick}}",
-  "user_channel_mode":  "Mode {{diff}} {{nick}} by {{from}}",
-  "channel_url":        "Channel URL: {{url}}",
-  "channel_topic":      "{{nick}} set the topic: {{topic}}",
-  "channel_mode":       "Channel mode: {{diff}} by {{from}}"
-};
-
 var AppView = Backbone.View.extend({
   initialize: function (options) {
-    window.app.networkList.bind('add', this.addNetwork, this);
+    window.app.client.connections.bind('add', this.addNetwork, this);
   },
 
   addNetwork: function (network) {
     var view = new NetworkListRowView({ model: network });
     $('#networks').append(view.render().el);
 
-    network.bufferList.bind('add', this.addBuffer, this);
+    network.buffers.bind('add', this.addBuffer, this);
   },
 
   addBuffer: function (buffer) {
@@ -49,14 +20,14 @@ var AppView = Backbone.View.extend({
       $('#users').append(buffer.memberListView.render().el);
     }
 
-    var network = buffer.network;
+    var network = buffer.connection;
     if (network.pendingOpenBuffer === buffer.get('name')) {
-      app.showBuffer(buffer.get('nid'), buffer.get('id'));
+      app.showBuffer(buffer.get('_cid'), buffer.get('id'));
       network.pendingOpenBuffer = null;
       return;
     }
 
-    var networkMatches = app.controller.networkId == buffer.network.id;
+    var networkMatches = app.controller.networkId == buffer.connection.id;
     var bufferMatches  = app.controller.bufferId  == buffer.id;
     var isConsole      = (!app.controller.bufferId) && (buffer instanceof ConsoleBuffer);
     if (networkMatches && (bufferMatches || isConsole)) {
@@ -74,8 +45,10 @@ var AppView = Backbone.View.extend({
     if (pageView) {
       $(pageView.el).addClass('active');
       this.setTitle(pageView.getTitle());
+      this.setTopic(pageView.getTopic());
     } else {
       this.setTitle('');
+      this.setTopic('');
     }
 
     // This is a bit of a special case hack here...
@@ -88,6 +61,9 @@ var AppView = Backbone.View.extend({
 
     // FIXME: Move
     app.view.trigger('page-changed', this.currentPage);
+    if (this.currentPage) {
+      this.currentPage.render(); 
+    }
   },
 
   setTitle: function (text) {
@@ -98,6 +74,10 @@ var AppView = Backbone.View.extend({
       $('.page-title').html(text);
       document.title = text + ' - TapChat';
     }
+  },
+
+  setTopic: function(text) {
+    $('.page-topic').html(text);
   },
 
   showAddNetworkDialog: function () {
@@ -121,7 +101,7 @@ var AppView = Backbone.View.extend({
           }
           $.post('/chat/login', { username: 'user', username: username, password: password }, function (data) {
             $.cookie('session', data.session, {secure: true});
-            app.connect();
+            app.client.connect();
           })
           .error(function() {
             app.view.showLoginDialog();
@@ -155,15 +135,22 @@ var NetworkListRowView = Backbone.View.extend({
   initialize: function () {
     this.model.bind('change', this.render, this);
     this.model.bind('destroy', this.remove, this);
-    this.model.bufferList.bind('add', this.addBuffer, this);
+    this.model.buffers.bind('add', this.addBuffer, this);
+    app.view.on('page-changed', this.pageChanged, this);
+    
+    $(this.el).append(ich.NetworkListRowView({
+      name: this.model.get('name')
+    }));
+    var url = '#' + this.model.id;
+    $(this.el).find('a.networkInfo').tappable(function () {
+      window.location = url;
+    });
 
     this.render();
-
-    app.view.on('page-changed', this.pageChanged, this);
   },
 
   pageChanged: function(page) {
-    if (page && page.model && page.model === this.model.getConsoleBuffer()) {
+    if (page && page.model && page.model === this.model.consoleBuffer) {
       $(this.el).addClass('active');
     } else {
       $(this.el).removeClass('active');
@@ -186,17 +173,22 @@ var NetworkListRowView = Backbone.View.extend({
   },
 
   render: function () {
-    $(this.el).empty();
-    $(this.el).append(ich.NetworkListRowView({
-      name: this.model.get('name')
-    }));
-
-    var url = '#' + this.model.id;
-    $(this.el).find('a.networkInfo').tappable(function () {
-      window.location = url;
-    });
-
+    this.updateStatusClass();
     return this;
+  },
+
+  updateStatusClass: function() {
+    var status = this.model.get('status');
+    if ($(this.el).hasClass('status-'+status)) {
+      return;
+    }
+    var classes = $(this.el).attr('class');
+    if (classes) {
+      $(this.el).attr('class', classes.split(' ').filter(function(item) {
+        return item.indexOf('status-') === -1;
+      }).join(' '));
+    }
+    $(this.el).addClass('status-' + status);
   }
 });
 
@@ -236,7 +228,7 @@ var BufferListRowView = Backbone.View.extend({
   },
 
   render: function () {
-    var network = app.networkList.get(this.model.get('nid'));
+    var network = app.client.connections.get(this.model.get('_cid'));
     var url = '#' + network.id + '/' + this.model.id;
 
     var a = $('<a>').addClass('tappable').html(this.model.get('name'));
@@ -247,6 +239,14 @@ var BufferListRowView = Backbone.View.extend({
     a.tappable(function () {
       window.location = url;
     });
+
+    if ((this.model instanceof ChannelBuffer)) {
+      if (!this.model.get('joined')) {
+        $(this.el).addClass('not-joined');
+      } else {
+        $(this.el).removeClass('not-joined');
+      }
+    }
 
     return this;
   }
@@ -263,7 +263,7 @@ var MemberListView = Backbone.View.extend({
     app.view.on('page-changed', this.pageChanged, this);
 
     this.model.bind('destroy', this.remove, this);
-    this.model.memberList.bind('add', this.addMember, this);
+    this.model.members.bind('add', this.addMember, this);
   },
 
   pageChanged: function(page) {
@@ -319,26 +319,49 @@ var BufferView = Backbone.View.extend({
 
     this.el.id = 'buffer-' + this.model.get('id');
 
-    this.model.bind('change',  this.render,   this);
-    this.model.bind('event',   this.addEvent, this);
-    this.model.bind('destroy', this.remove,   this);
+    this.model.connection.bind('change', this.render, this);
+
+    this.model.bind('change',  this.render, this);
+    this.model.bind('destroy', this.remove, this);
+
+    this.model.backlog.bind('add', this.addEvent, this);
   },
 
   getTitle: function () {
     if (this.model instanceof ConsoleBuffer) {
-        return this.model.network.get('name');
+        return this.model.connection.get('name');
     } else {
       return this.model.get('name');
     }
   },
 
-  render: function () {
-    var topic = this.model.get('topic_text');
-    if (topic) {
-      $(this.el).find('.topic_text').html(topic);
-    } else {
-      $(this.el).find('.topic_text').html('');
+  getTopic: function() {
+    if (this.model instanceof ChannelBuffer) {
+      var topic = this.model.get('topic');
+      if (topic) {
+        return topic.topic_text;
+      }
     }
+    return null;
+  },
+
+  render: function () {
+    var statusBar = $(this.el).find('.status')
+
+    var status = this.model.connection.get('status');
+
+    if (status != Connection.STATUS_CONNECTED) {
+      statusBar.find('.status-text').html(status);
+      statusBar.show();
+    } else {
+      if ((this.model instanceof ChannelBuffer) && (!this.model.get('joined'))) {
+        statusBar.find('.status-text').html('Not in channel.');
+        statusBar.show();
+      } else {
+        statusBar.hide(); 
+      }
+    }
+    
     return this;
   },
 
@@ -350,9 +373,11 @@ var BufferView = Backbone.View.extend({
   },
 
   addEvent: function (event) {
+    event = event.attributes;
+
     var msg;
 
-    var template = BUFFER_EVENTS[event.type];
+    var template = Buffer.EVENT_TEXTS[event.type];
     if (template) {
       msg = _.template(template, event);
     } else if (event.msg) {
@@ -399,22 +424,14 @@ var BufferView = Backbone.View.extend({
 
   sendMessage: function (text) {
     if (text === "") return;
-    var buffer = this.model;
-    var msg = {
-          cid: buffer.network.get('nid'),
-           to: buffer.get('name'),
-          msg: text,
-       _reqid: window.app._reqid,
-      _method: "say"
-    };
-    window.app.send(msg);
+    this.model.say(text);
   }
 });
 
 var MainMenuView = Backbone.View.extend({
   initialize: function (options) {
-    window.app.networkList.bind('add', this.addNetwork, this);
-    window.app.bind('user-updated', this.updateUser, this);
+    window.app.client.connections.bind('add', this.addNetwork, this);
+    window.app.client.bind('user-updated', this.updateUser, this);
   },
 
   addNetwork: function (network) {
@@ -436,7 +453,7 @@ var SettingsView = Backbone.View.extend({
     $(this.el).append(ich.Settings);
 
     app.view.on('page-changed', this.pageChanged, this);
-    app.networkList.bind('add', this.addNetwork, this);
+    app.client.connections.bind('add', this.addNetwork, this);
 
     this.$('.nav-tabs a').click(function (e) {
       e.preventDefault();
@@ -468,18 +485,12 @@ var SettingsView = Backbone.View.extend({
     $('#networks-list').append(networkView.render().el);
   },
 
-  pageChanged: function(page) {
-    if (page === this) {
-      $('#settings-btn').addClass('active');
-      $('#settings-item').parent('li').addClass('active');
-    } else {
-      $('#settings-btn').removeClass('active');
-      $('#settings-item').parent('li').removeClass('active');
-    }
-  },
-
   getTitle: function() {
     return 'Settings';
+  },
+
+  getTopic: function() {
+    return null;
   }
 });
 
@@ -493,7 +504,7 @@ var AdminView = Backbone.View.extend({
 
   initialize: function (options) {
     app.view.on('page-changed', this.pageChanged, this);
-    app.on('users-changed', this.loadUsers, this);
+    app.client.on('users-changed', this.loadUsers, this);
     $(this.el).append(ich.Admin);
   },
 
@@ -536,6 +547,10 @@ var AdminView = Backbone.View.extend({
     return 'Admin';
   },
 
+  getTopic: function() {
+    return null;
+  },
+
   loadUsers: function() {
     var self = this;
     console.log('get users!');
@@ -573,11 +588,11 @@ var SettingsNetworkView = Backbone.View.extend({
   },
 
   render: function () {
-    var isDisconnected = this.model.get('state') == 'disconnected';
+    var isDisconnected = this.model.get('status') == 'disconnected';
     $(this.el).empty();
     $(this.el).append(ich.SettingsNetworkView({
       name:           this.model.get('name'),
-      state:          this.model.get('state'),
+      state:          this.model.get('status'),
       isConnected:    !isDisconnected,
       isDisconnected: isDisconnected
     }));
@@ -700,7 +715,7 @@ var EditNetworkDialog = Backbone.View.extend({
     }
 
     console.log('form', data);
-    app.send(data);
+    app.client.send(data);
   }
 });
 
@@ -740,9 +755,9 @@ var CertDialog = Backbone.View.extend({
 
   acceptCert: function (accept) {
     console.log('accept!', this.attrs);
-    app.send({
+    app.client.send({
       _method:     'accept-cert',
-      cid:         this.attrs.nid,
+      cid:         this.attrs._cid,
       fingerprint: this.attrs.fingerprint,
       accept:      accept
     });
@@ -753,8 +768,8 @@ var JoinChannelDialog = Backbone.View.extend({
   render: function () {
     $(this.el).empty();
     $(this.el).append(ich.JoinChannelDialog({
-      networks: app.networkList.models.map(function (m) {
-        return m.attributes;
+      networks: app.client.connections.models.map(function (m) {
+        return { id: m.id, name: m.get('name') };
       })
     }));
     return this;
@@ -787,7 +802,7 @@ var JoinChannelDialog = Backbone.View.extend({
     var networkId = $(this.dialog).find('select[name=network]').val();
     var channel   = $(this.dialog).find('input[name=channel]').val();
 
-    var network = app.networkList.get(networkId);
+    var network = app.client.connections.get(networkId);
     network.join(channel);
   }
 });

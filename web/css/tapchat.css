@@ -66,6 +66,7 @@ body {
 
 .left {
   width: 100%;
+  overflow: hidden;
 }
 
 #nav #main-menu-button {
@@ -74,6 +75,17 @@ body {
 
 #nav #logo {
   display inline-block;
+}
+
+#nav .page-title-text {
+  font-weight: bold;
+  padding-left: 5px;
+}
+
+#nav .page-topic {
+  display: inline;
+  position: absolute;
+  padding-left: 10px;
 }
 
 #pages {
@@ -155,12 +167,31 @@ body {
 #networks li a.networkInfo {
   display: block;
   border-bottom: 1px solid #bbb;
+  
+}
+
+/*
+#networks li.active .networkInfo {
+}
+*/
+
+#networks li.status-disconnected a.networkInfo {
+  background: #f2dede; 
+}
+
+#networks li.status-connecting a.networkInfo {
+  background: #fcf8e3
+}
+
+#networks li.status-connected a.networkInfo {
   background: #EEE;
 }
 
-#networks li.active .networkInfo {
+/*
+#networks li.status-connected.active .networkInfo {
   background: #e1e1e1;
 }
+*/
 
 #networks li a, #users ul li a {
   padding: 6px;
@@ -206,6 +237,10 @@ body {
   display: none;
 }
 
+#networks li ul.bufferList li.not-joined a {
+  text-decoration: line-through;
+}
+
 #users {
   margin: 0;
 }
@@ -227,33 +262,18 @@ body {
   background: url('../img/op.png') left center no-repeat;
 }
 
-.topic {
-  height: 30px;
-  background: #EEE;
+.buffer .status {
   border-bottom: 1px solid #BBB;
-
-  display: -webkit-box;
-  -webkit-box-align: center;
-
-  display: -moz-box;
-  -moz-box-align: center;
-
-  display: box;
-  box-align: center;
+  position: absolute;
+  left: 0px;
+  right: 1px;
+  z-index: 999;
+  background: rgba(238, 238, 238, 0.9);
 }
 
-.topic .topic_text {
-  padding-left: 6px;
+.buffer .status .status-text {
+  padding: 10px;
   font-size: 14px;
-}
-
-.topic .right {
-  padding: 0;
-}
-
-.topic button {
-  background: transparent;
-  border: 0;
 }
 
 .events-outer {
@@ -263,7 +283,7 @@ body {
   -webkit-overflow-scrolling: touch;
 
   position: absolute;
-  top: 31px;
+  top: 0px;
   bottom: 32px;
 }
 
