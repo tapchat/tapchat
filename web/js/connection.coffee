@@ -19,7 +19,7 @@ class Connection extends Backbone.Model
     if channel = @buffers.findByName(channelName)
       if channel.get('joined')
         @trigger('open-buffer', channel)
-        callback()
+        callback() if callback
         return
 
     @post

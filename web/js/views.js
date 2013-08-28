@@ -203,10 +203,6 @@ var BufferListRowView = Backbone.View.extend({
     this.model.bind('destroy', this.remove, this);
 
     app.view.on('page-changed', this.pageChanged, this);
-
-    if (this.model.get('hidden')) {
-      $(this.el).addClass('archived');
-    }
   },
 
   pageChanged: function(page) {
@@ -247,6 +243,8 @@ var BufferListRowView = Backbone.View.extend({
         $(this.el).removeClass('not-joined');
       }
     }
+
+    this.$el.toggleClass('archived', !!this.model.get('archived'));
 
     return this;
   }
@@ -420,8 +418,8 @@ var BufferView = Backbone.View.extend({
           .append($('<a>').attr('href', '#').addClass('who').text(from).click(function() {
             self.model.connection.openBuffer(from, '');
             return false;
-          }))
-          .append($('<span>').text(msg).linkify(linkifyCfg)));
+          })))
+          .append($('<span>').text(msg).linkify(linkifyCfg));
       } else if (type == 'buffer_me_msg') {
         eventDiv.append($('<span>')
           .append($('<span>').addClass('who').text('• ' + from))
@@ -442,6 +440,23 @@ var BufferView = Backbone.View.extend({
 
   sendMessage: function (text) {
     if (text === "") return;
+    if (text.indexOf('/') == 0) {
+      text = text.substring(1);
+      switch (text) {
+        case "part":
+          this.model.part();
+          break;
+        case "archive":
+          this.model.archive();
+          break;
+        case "unarchive":
+          this.model.unarchive();
+          break;
+        default:
+          alert('Unknown command');
+      }
+      return;
+    }
     this.model.say(text);
   }
 });

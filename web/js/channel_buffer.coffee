@@ -8,10 +8,10 @@ class ChannelBuffer extends Buffer
     @members = new MemberList()
 
   join: ->
-    @connection.part(@get('name'))
+    @connection.join(@get('name'))
 
   part: ->
-    @connection.join(@get('name'))
+    @connection.part(@get('name'))
 
   isActive: ->
     super and @get('joined')
