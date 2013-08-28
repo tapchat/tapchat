@@ -75,16 +75,16 @@ class TapchatClient
       if message.msg?
         message = message.msg
 
-        if @responseHandlers[reqid]
-          info = @responseHandlers[reqid]
-          delete @responseHandlers[reqid]
+      if @responseHandlers[reqid]
+        info = @responseHandlers[reqid]
+        delete @responseHandlers[reqid]
 
-          if message._cid?
-            if connection = @connections.get(message._cid)
-              connection.handleResponse(message, info.request)
+        if message.cid?
+          if connection = @connections.get(message.cid)
+            connection.handleResponse(message, info.request)
 
-          if info.callback
-            info.callback(message, info.request)
+        if info.callback
+          info.callback(message, info.request)
 
       return
 

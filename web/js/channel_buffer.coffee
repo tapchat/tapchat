@@ -1,5 +1,5 @@
 class Member extends Backbone.Model
-  constructor: (connection, attrs) ->
+  constructor: (@buffer, attrs) ->
     super(attrs)
     
 class ChannelBuffer extends Buffer

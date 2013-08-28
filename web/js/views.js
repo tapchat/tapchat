@@ -293,9 +293,22 @@ var MemberListRowView = Backbone.View.extend({
       $(this.el).attr('class', 'mode-' + this.model.get('mode'));
     }
 
-    var data = this.model.toJSON();
-    data.url = "javascript:alert('not implemented')"; // FIXME
-    $(this.el).html(ich.MemberListRowView(data));
+    var self = this;
+
+    var nick = this.model.get('nick');
+
+    var a = $('<a>')
+      .attr('title', nick)
+      .attr('href', '#')
+      .text(nick)
+      .click(function() {
+        self.model.buffer.connection.openBuffer(nick, '');
+        return false;
+      });
+
+    this.$el.empty();
+    this.$el.append(a);
+
     return this;
   }
 });
@@ -400,9 +413,14 @@ var BufferView = Backbone.View.extend({
         }
       };
 
+      var self = this;
+
       if (type == 'buffer_msg') {
         eventDiv.append($('<span>')
-          .append($('<span>').addClass('who').text(from))
+          .append($('<a>').attr('href', '#').addClass('who').text(from).click(function() {
+            self.model.connection.openBuffer(from, '');
+            return false;
+          }))
           .append($('<span>').text(msg).linkify(linkifyCfg)));
       } else if (type == 'buffer_me_msg') {
         eventDiv.append($('<span>')
@@ -435,6 +453,7 @@ var MainMenuView = Backbone.View.extend({
   },
 
   addNetwork: function (network) {
+    network.bind('open-buffer', this.openBuffer, this);
     var view = new NetworkListRowView({ model: network });
     $('#main-menu').prepend(view.render().el);
   },
@@ -442,6 +461,11 @@ var MainMenuView = Backbone.View.extend({
   updateUser: function (user) {
     $('#nav .username').html(user.name);
     $('#admin-item').toggleClass('hide', !user.is_admin);
+  },
+
+  openBuffer: function(buffer) {
+    window.location = '#' + buffer.connection.id + '/' + buffer.id;
+    app.view.showPage(buffer.view);
   }
 });
 

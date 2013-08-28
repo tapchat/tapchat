@@ -52,10 +52,10 @@ class Connection extends Backbone.Model
 
   openBuffer: (nick) ->
     if buffer = @buffers.findByName(nick)
-      @say(nick, null, null)
-    else
       buffer.unarchive()
       @trigger('open-buffer', buffer) # FIXME
+    else
+      @say(nick, null, null)
 
   reconnect: (callback) ->
     @send
@@ -141,9 +141,9 @@ class Connection extends Backbone.Model
       buffer.connection = this
       @buffers.add(buffer)
 
-      # FIXME: Make this work...
-      # if @pendingOpenBufferName? and @pendingOpenBufferName == buffer.name
-      #   @trigger('open-buffer', buffer)
+      if @pendingOpenBufferName? and @pendingOpenBufferName == buffer.get('name')
+        @trigger('open-buffer', buffer)
+        @pendingOpenBufferName = null
 
   initializedMessageHandlers:
     #status_changed: (message) ->
