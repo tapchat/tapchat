@@ -226,7 +226,7 @@ class Engine
         ws = new WebSocket(req, socket, head)
         user.addClient(ws, req.param('inband', false))
 
-    @web.listen port, =>
+    @web.listen port, '::', =>
       console.log "\nTapChat ready at https://localhost:#{port}\n"
       callback(this) if callback
 
