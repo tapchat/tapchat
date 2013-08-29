@@ -342,7 +342,7 @@ body {
   margin-bottom: 0px;
   overflow: auto;
 }
-.buffer .event span {
+.buffer .event .when, .buffer .event .content {
   display: table-cell;
 }
 .buffer .event .who {
@@ -350,12 +350,6 @@ body {
   color: #64A34E;
   text-align: right;
   padding-right: 5px;
-}
-.buffer .event .message {
-  font-size: 11pt;
-  font-family: sans-serif;
-  font-style: italic;
-  color: #888888;
 }
 .buffer .event .header {
   padding-left: 118px;

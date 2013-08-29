@@ -414,18 +414,18 @@ var BufferView = Backbone.View.extend({
       var self = this;
 
       if (type == 'buffer_msg') {
-        eventDiv.append($('<span>')
+        eventDiv.append($('<span>').addClass('content')
           .append($('<a>').attr('href', '#').addClass('who').text(from).click(function() {
             self.model.connection.openBuffer(from, '');
             return false;
-          })))
-          .append($('<span>').text(msg).linkify(linkifyCfg));
+          }))
+          .append($('<span>').addClass('message').text(msg).linkify(linkifyCfg)));
       } else if (type == 'buffer_me_msg') {
-        eventDiv.append($('<span>')
+        eventDiv.append($('<span>').addClass('content')
           .append($('<span>').addClass('who').text('• ' + from))
           .append($('<span>').text(msg).linkify(linkifyCfg)));
       } else {
-        eventDiv.append($('<span>').addClass('message').text(msg));
+        eventDiv.append($('<span>').addClass('content').append($('<span>').addClass('message').text(msg)));
       }
 
       $(this.el).find('.events').append(eventDiv);
@@ -440,7 +440,7 @@ var BufferView = Backbone.View.extend({
 
   sendMessage: function (text) {
     if (text === "") return;
-    if (text.indexOf('/') == 0) {
+    if (text.indexOf('/') == 0 && text.indexOf('/me ') == -1) {
       text = text.substring(1);
       switch (text) {
         case "part":
