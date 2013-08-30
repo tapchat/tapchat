@@ -422,7 +422,8 @@ var BufferView = Backbone.View.extend({
       var eventDiv = $('<div>')
         .addClass('event')
         .addClass('event_'+type)
-        .append($('<span>').addClass('when').text(timestamp));
+        .append($('<div>').addClass('when')
+          .append($('<div>').text(timestamp)));
 
       if (event.highlight) {
         eventDiv.addClass('highlight');
@@ -437,7 +438,7 @@ var BufferView = Backbone.View.extend({
       var self = this;
 
       if (type == 'buffer_msg') {
-        eventDiv.append($('<span>').addClass('content')
+        eventDiv.append($('<div>').addClass('content')
           .append($('<a>').attr('href', '#').addClass('who').text(from).click(function() {
             self.model.connection.openBuffer(from, '');
             return false;
@@ -451,7 +452,7 @@ var BufferView = Backbone.View.extend({
           }))
           .append($('<span>').text(msg).linkify(linkifyCfg)));
       } else {
-        eventDiv.append($('<span>').addClass('content').append($('<span>').addClass('message').text(msg)));
+        eventDiv.append($('<div>').addClass('content').append($('<span>').addClass('message').text(msg)));
       }
 
       $(this.el).find('.events').append(eventDiv);

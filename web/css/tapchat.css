@@ -349,7 +349,7 @@ body {
   padding: 2px;
   padding-bottom: 4px;
   margin-bottom: 0px;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .buffer .event.highlight {
@@ -376,12 +376,14 @@ body {
   display: none;
 }
 
-.buffer .event .when {
+.buffer .event .when div {
   font-size: 10px;
   padding-right: 10px;
-  width: 50px;
   text-align: right;
   color: #666666;
+  display: inline-block;
+  width: 50px;
+  white-space: nowrap;
 }
 
 .buffer .event_server_motd .message {
