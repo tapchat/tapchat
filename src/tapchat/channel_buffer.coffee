@@ -23,7 +23,7 @@ ChatBuffer = require('./chat_buffer')
 class ChannelMember
   constructor: (nick, mode) ->
     @nick = nick
-    @mode = mode
+    @mode = mode || ''
 
   addMode: (mode) ->
     @mode += mode unless @mode.indexOf(mode) >= 0
