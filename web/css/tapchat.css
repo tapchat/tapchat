@@ -351,22 +351,31 @@ body {
   margin-bottom: 0px;
   overflow: auto;
 }
+
+.buffer .event.highlight {
+  background: rgba(100, 163, 78, 0.2);
+}
+
 .buffer .event .when, .buffer .event .content {
   display: table-cell;
 }
+
 .buffer .event .who {
   font-weight: bold;
   color: #64A34E;
   text-align: right;
   padding-right: 5px;
 }
+
 .buffer .event .header {
   padding-left: 118px;
   display: block;
 }
+
 .buffer .event .channel {
   display: none;
 }
+
 .buffer .event .when {
   font-size: 10px;
   padding-right: 10px;

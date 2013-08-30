@@ -424,6 +424,10 @@ var BufferView = Backbone.View.extend({
         .addClass('event_'+type)
         .append($('<span>').addClass('when').text(timestamp));
 
+      if (event.highlight) {
+        eventDiv.addClass('highlight');
+      }
+
       var linkifyCfg = {
         handleLinks: function(links) {
           return links.prop('target', '_new');
