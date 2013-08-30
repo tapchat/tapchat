@@ -29,9 +29,6 @@ class TapchatClient
     @socket.onclose = (evt) =>
       @setConnectionState(@STATE_DISCONNECTED)
       @socket = null
-      if @heartbeatIntervalId
-        clearInterval(@heartbeatIntervalId)
-        @heartbeatIntervalId = null
 
       for connection in @connections.models
         connection.clientDisconnected()
@@ -97,7 +94,7 @@ class TapchatClient
       if connection = @connections.get(message._cid)
         connection.processMessage(message)
 
-  selectBuffer: (connectionId, bufferId) ->
+  selectBuffer: (connectionId, bufferId, selected) ->
     unless connection = @connections.get(connectionId)
       # Shouldn't happen...
       return
@@ -106,17 +103,28 @@ class TapchatClient
       @selectedBuffer = null
       return
 
-    if event.selected
+    if selected
       @selectedBuffer = buffer
       buffer.markAllRead()
     else
       if @selectedBuffer == buffer
         @selectedBuffer = null
 
-  # FIXME: Heartbeats...
+    connection.client.post
+      _method: 'heartbeat'
+      seenEids: _.tap({}, (o) =>
+        o[connection.id] = _.tap({}, (o) =>
+          o[buffer.id] = buffer.lastSeenEid
+        )
+      )
+      selectedBuffer: if @selectedBuffer then @selectedBuffer.id else null
 
-  sendHeartbeat: ->
-
+  getState: ->
+    @connections.map (connection) ->
+      _.tap {}, (o) ->
+        o[connection.id] = connection.buffers.map (buffer) ->
+          _.tap {}, (o) ->
+            o[buffer.id] = buffer.lastSeenEid
 
   messageHandlers: 
     header: (message) ->
@@ -128,8 +136,9 @@ class TapchatClient
       @trigger('user-updated', @user)
 
     backlog_complete: (message) ->
+      for connection in @connections.models
+        connection.remove() unless connection.exists
       @setConnectionState(@STATE_LOADED)
-      @sendHeartbeat()
 
     makeserver: (message) ->
       if connection = @connections.get(message._cid)

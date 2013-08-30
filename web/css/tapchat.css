@@ -229,6 +229,15 @@ body {
   font-weight: normal;
 }
 
+#networks li ul.bufferList li.unread a {
+  font-weight: bold !important;
+}
+
+#networks li ul.bufferList li a .badge {
+  margin-top: 1px;
+  float: right;
+}
+
 #networks li ul.bufferList li.active {
   background: #f1f1f1;
 }

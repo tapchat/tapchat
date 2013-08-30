@@ -64,6 +64,13 @@ var AppView = Backbone.View.extend({
     if (this.currentPage) {
       this.currentPage.render(); 
     }
+
+    if (isBuffer) {
+      var buffer = this.currentPage.model;
+      app.client.selectBuffer(buffer.connection.id, buffer.id, true);
+    } else {
+      app.client.selectBuffer(0, 0, false)
+    }
   },
 
   setTitle: function (text) {
@@ -227,7 +234,13 @@ var BufferListRowView = Backbone.View.extend({
     var network = app.client.connections.get(this.model.get('_cid'));
     var url = '#' + network.id + '/' + this.model.id;
 
+    var highlights = this.model.get('highlights');
+    if (highlights == 0) {
+      highlights = '';
+    }
+
     var a = $('<a>').addClass('tappable').html(this.model.get('name'));
+    a.append($('<span>').addClass('badge badge-important').text(highlights));
 
     $(this.el).empty();
     $(this.el).append(a);
@@ -245,6 +258,12 @@ var BufferListRowView = Backbone.View.extend({
     }
 
     this.$el.toggleClass('archived', !!this.model.get('archived'));
+
+    if (this.model.get('unread')) {
+      $(this.el).addClass('unread');
+    } else {
+      $(this.el).removeClass('unread');
+    }
 
     return this;
   }
@@ -422,7 +441,10 @@ var BufferView = Backbone.View.extend({
           .append($('<span>').addClass('message').text(msg).linkify(linkifyCfg)));
       } else if (type == 'buffer_me_msg') {
         eventDiv.append($('<span>').addClass('content')
-          .append($('<span>').addClass('who').text('• ' + from))
+          .append($('<a>').attr('href', '#').addClass('who').text('• ' + from).click(function() {
+            self.model.connection.openBuffer(from, '');
+            return false;
+          }))
           .append($('<span>').text(msg).linkify(linkifyCfg)));
       } else {
         eventDiv.append($('<span>').addClass('content').append($('<span>').addClass('message').text(msg)));

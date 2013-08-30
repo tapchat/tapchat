@@ -86,7 +86,7 @@ class User
         catch error
           Log.error "Error handling message",
             message: event.data
-            error: error.stack
+            error: error
           client.close()
       else
         Log.warn "No handler for #{message._method}"
@@ -219,25 +219,30 @@ class User
 
   messageHandlers:
     heartbeat: (client, message, callback) ->
-      @selectedBid = message.selectedBuffer
+      if message.selectedBuffer?
+        @selectedBid = message.selectedBuffer
 
-      seenEids = JSON.parse(message.seenEids)
+      if message.seenEids?
+        if typeof message.seenEids == 'string'
+          message.seenEids = JSON.parse(message.seenEids)
 
-      queue = new WorkingQueue(1)
+        seenEids = message.seenEids
 
-      for cid, buffers of seenEids
-        connection = @findConnection(parseInt(cid))
-        throw "connection not found: #{cid}" unless connection
-        for bid, eid of buffers
-          buffer = connection.findBuffer(parseInt(bid))
-          throw "buffer not found: #{bid}" unless buffer
-          do (buffer, eid) =>
-            queue.perform (over) =>
-              buffer.setLastSeenEid(eid, over)
+        queue = new WorkingQueue(1)
+
+        for cid, buffers of seenEids
+          connection = @findConnection(parseInt(cid))
+          throw "connection not found: #{cid}" unless connection
+          for bid, eid of buffers
+            buffer = connection.findBuffer(parseInt(bid))
+            throw "buffer not found: #{bid}" unless buffer
+            do (buffer, eid) =>
+              queue.perform (over) =>
+                buffer.setLastSeenEid(eid, over)
 
       queue.onceDone =>
         @engine.db.getAllLastSeenEids @id, (updatedSeenEids) =>
-          @send client,
+          @broadcast
             type: 'heartbeat_echo',
             seenEids: updatedSeenEids
 

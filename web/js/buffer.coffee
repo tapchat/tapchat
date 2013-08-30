@@ -32,6 +32,8 @@ class Buffer extends Backbone.Model
   constructor: (@connection, attrs) ->
     super(attrs)
     @backlog = new BufferEventList()
+    @lastEid = 0
+    @lastSeenEid = 0
     @reload(attrs)
 
   say: (text, callback) ->
@@ -39,7 +41,7 @@ class Buffer extends Backbone.Model
 
   markAllRead: ->
     if @backlog.length > 0
-      @markRead(@backlog.last().eid)
+      @markRead(@backlog.last().items.last().get('eid'))
 
   markRead: (eid) ->
     return if eid < @lastEid
@@ -64,8 +66,9 @@ class Buffer extends Backbone.Model
 
   reload: (message) ->
     @exists = true
-    for name in ['name', 'archived', 'last_seen_eid']
+    for name in ['name', 'archived']
       @set(name, message[name])
+    @lastSeenEid = message['last_seen_eid'] || 0
     @set('highlights', 0)
 
   clientDisconnected: ->
@@ -87,11 +90,13 @@ class Buffer extends Backbone.Model
         @backlog.add(new BufferEvent(item))
 
       if eid > @lastSeenEid
-        if @hasFocus() || message.self?
+        if @hasFocus() || message.self
           @markRead(eid)
         else
-          @set('unread', true) if message.important
-          @set('highlights', @get('highlights') + 1) if message.highlight
+          if _.contains(["buffer_msg", "buffer_me_msg", "notice"], message.type)
+            @set('unread', true)
+          if message.highlight
+            @set('highlights', @get('highlights') + 1)
 
     if (!message.is_backlog) and (!@connection.isBacklog)
       if handler = @initializedMessageHandlers[type]

@@ -37,11 +37,6 @@
     <script type="text/coffeescript" src="js/tapchat_client.coffee"></script>
     <script type="text/coffeescript" src="js/main.coffee"></script>
 
-    <!--
-    <script type="text/javascript" src="js/app.js"></script>
-    <script type="text/javascript" src="js/models.js"></script>
-    <script type="text/javascript" src="js/collections.js"></script>
-    -->
     <script type="text/html" id="NetworkListRowView">
       <a class="tappable networkInfo">{{name}}</a>
       <ul class="bufferList unstyled"></ul>
@@ -147,11 +142,15 @@
 
     <script type="text/html" id="Settings">
       <ul class="nav nav-tabs">
-        <li class="active"><a href="#accountSettingsTab" data-toggle="tab">Account</a></li>
-        <li><a href="#networksSettingsTab" data-toggle="tab">IRC Networks</a></li>
+        <li class="active"><a href="#networksSettingsTab" data-toggle="tab">IRC Networks</a></li>
+        <li><a href="#accountSettingsTab" data-toggle="tab">Account</a></li>
       </ul>
       <div class="tab-content">
-        <div class="tab-pane active" id="accountSettingsTab">
+        <div class="tab-pane active" id="networksSettingsTab">
+          <button id="add-network-btn" class="btn">Add IRC Network</button>
+          <ul id="networks-list"></ul>
+        </div>
+        <div class="tab-pane" id="accountSettingsTab">
           <form class="form-horizontal" id="change-password-form">
             <fieldset>
               <legend>Change Password</legend>
@@ -174,10 +173,6 @@
               </div>
             </div>
           </form>
-        </div>
-        <div class="tab-pane" id="networksSettingsTab">
-          <button id="add-network-btn" class="btn">Add IRC Network</button>
-          <ul id="networks-list"></ul>
         </div>
       </div>
     </script>
