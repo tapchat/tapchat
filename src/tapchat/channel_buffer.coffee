@@ -58,7 +58,7 @@ class ChannelBuffer extends ChatBuffer
 
   renameMember: (oldNick, newNick) ->
     member = @members[oldNick]
-    delete members[oldNick]
+    delete @members[oldNick]
 
     member.nick = newNick
     @members[newNick] = member

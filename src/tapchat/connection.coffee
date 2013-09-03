@@ -669,6 +669,8 @@ class Connection extends EventEmitter
         if buffer = @getBuffer(name)
           do (buffer) =>
             queue.perform (addEventOver) =>
+              if buffer instanceof ChannelBuffer
+                buffer.renameMember(oldnick, newnick)
               buffer.addEvent
                 type: 'nickchange'
                 newnick: newnick
@@ -694,6 +696,8 @@ class Connection extends EventEmitter
         if buffer = @getBuffer(name)
           do (buffer) =>
             queue.perform (addEventOver) =>
+              if buffer instanceof ChannelBuffer
+                buffer.renameMember(oldnick, newnick)
               buffer.addEvent
                 type: 'you_nickchange'
                 newnick: newnick

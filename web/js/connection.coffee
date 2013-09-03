@@ -6,7 +6,7 @@ class Connection extends Backbone.Model
   idAttribute: '_cid'
 
   constructor: (@client, attrs) ->
-    super(attrs)
+    super(attrs) # FIXME: Whitelist attrs
     @buffers = new BufferList()
     @updateDetails(attrs)
 
@@ -188,10 +188,10 @@ class Connection extends Backbone.Model
         buffer.set('archived', false)
 
     server_details_changed: (message) ->
-      @update(message)
+      @set(message) # FIXME: Whitelist attrs.
 
     you_nickchange: (message) ->
-      @set('nick', message.nick)
+      @set('nick', message.newnick)
 
     invalid_cert: (message) ->
       @trigger('invalid-cert', message)

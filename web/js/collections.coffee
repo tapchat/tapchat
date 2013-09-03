@@ -18,8 +18,8 @@ class MemberList extends Backbone.Collection
       member.destroy()
 
   updateNick: (message) ->
-    if member = @findByNick(message.nick)
-      member.update(message)
+    if member = @findByNick(message.oldnick)
+      member.set('nick', message.newnick)
 
 class BufferEventList extends Backbone.Collection
   model: BufferEvent
