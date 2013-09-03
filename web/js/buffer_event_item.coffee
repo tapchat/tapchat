@@ -3,7 +3,6 @@ class BufferEventItem extends Backbone.Model
     super
     
   isSameDay: (otherItem) ->
-    super
-    false
+    false # FIXME
 
 window.BufferEventItem = BufferEventItem
