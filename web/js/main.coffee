@@ -57,6 +57,13 @@ $ ->
 
   Backbone.history.start()
 
+  app.client.on 'connection-state-changed', (state) =>
+    if state == TapchatClient.STATE_DISCONNECTED
+      app.view.showError('Connection closed, please reload.')
+
+  app.client.on 'error', (error) =>
+    app.view.showError("Error: #{error}")
+
   session = $.cookie('session')
   if session
     app.client.connect()

@@ -1,22 +1,22 @@
 class TapchatClient
-  @STATE_DISCONNECTED = 0
-  @STATE_CONNECTING   = 1
-  @STATE_CONNECTED    = 2
-  @STATE_LOADING      = 3
-  @STATE_LOADED       = 4
+  @STATE_DISCONNECTED = 'disconnected'
+  @STATE_CONNECTING   = 'connecting'
+  @STATE_CONNECTED    = 'connected'
+  @STATE_LOADING      = 'loading'
+  @STATE_LOADED       = 'loaded'
 
   constructor: () ->
     _.extend @, Backbone.Events
 
-    @connectionState = @STATE_DISCONNECTED
+    @connectionState = TapchatClient.STATE_DISCONNECTED
     @reqid = 0
     @responseHandlers = {}
     @connections = new ConnectionList()
 
   connect: ->
-    return unless @connectionState == @STATE_DISCONNECTED
+    return unless @connectionState == TapchatClient.STATE_DISCONNECTED
   
-    @setConnectionState(@STATE_CONNECTING)
+    @setConnectionState(TapchatClient.STATE_CONNECTING)
 
     scheme  = if (window.location.protocol == 'https:') then 'wss' else 'ws'
     address = scheme + "://" + window.location.host + "/chat/stream?inband=true"
@@ -24,24 +24,23 @@ class TapchatClient
     @socket = new WebSocket(address)
     
     @socket.onopen = (evt) =>
-      @setConnectionState(@STATE_CONNECTED)
+      @setConnectionState(TapchatClient.STATE_CONNECTED)
 
     @socket.onclose = (evt) =>
-      @setConnectionState(@STATE_DISCONNECTED)
+      @setConnectionState(TapchatClient.STATE_DISCONNECTED)
       @socket = null
-
       for connection in @connections.models
         connection.clientDisconnected()
 
     @socket.onmessage = (evt) =>
-      # console.log(evt.data)
+      # console.log(evt.data) if window.console
       @processMessage(JSON.parse(evt.data))
 
-    @socket.onerror = () =>
-      @handleError() # FIXME
+    @socket.onerror = (error) =>
+      @trigger('error', error)
 
   disconnect: () ->
-    return if @connectionState == @STATE_DISCONNECTED
+    return if @connectionState == TapchatClient.STATE_DISCONNECTED
     @socket.close()
 
   setConnectionState: (state) ->
@@ -128,7 +127,7 @@ class TapchatClient
 
   messageHandlers: 
     header: (message) ->
-      @setConnectionState(@STATE_LOADING)
+      @setConnectionState(TapchatClient.STATE_LOADING)
       # FIXME @idleInterval = message.idle_interval
 
     stat_user: (message) ->
@@ -138,7 +137,7 @@ class TapchatClient
     backlog_complete: (message) ->
       for connection in @connections.models
         connection.remove() unless connection.exists
-      @setConnectionState(@STATE_LOADED)
+      @setConnectionState(TapchatClient.STATE_LOADED)
 
     makeserver: (message) ->
       if connection = @connections.get(message._cid)
