@@ -33,10 +33,10 @@ class ChannelMember
 
 class ChannelBuffer extends ChatBuffer
   type: 'channel'
-  members: {}
 
   constructor: (connection, info) ->
     super(connection, info)
+    @members = {}
     @autoJoin = info.auto_join
 
   setJoined: (joined, callback) ->
@@ -57,7 +57,9 @@ class ChannelBuffer extends ChatBuffer
     @members[nick] = new ChannelMember(nick, mode)
 
   renameMember: (oldNick, newNick) ->
-    member = @members[oldNick]
+    unless member = @members[oldNick]
+      throw "#{@name} member not found: #{oldNick} (new: #{newNick}). Members: #{JSON.stringify(@members)}."
+
     delete @members[oldNick]
 
     member.nick = newNick

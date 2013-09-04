@@ -271,6 +271,10 @@ class Connection extends EventEmitter
       return buffer if buffer.id == bid
     return null
 
+  buffersForMember: (nick) ->
+    @buffers.filter (buffer) ->
+      (buffer instanceof ChannelBuffer and buffer.getMember(nick)) or (buffer.name == nick)
+
   getBuffer: (name) ->
     return null unless name
     for buffer in @buffers
@@ -374,21 +378,14 @@ class Connection extends EventEmitter
       @consoleBuffer.addEvent B.serverMotd(this, motd),
         over
 
-    names: (channel, nicks, over) ->
+    names: (channel, nicks, raw, over) ->
       if buffer = @getBuffer(channel)
-        # irc.js should probably do this...
-        nicks = _.clone(nicks)
-        for nick, prefix of nicks
-          if _.isEmpty(prefix)
-            nicks[nick] = ''
-          else
-            if mode = @client.modeForPrefix[prefix]
-              nicks[nick] = mode
-            else
-              # Should never happen...
-              throw "Unknown mode prefix #{prefix}"
+        for nick, mode of nicks
+          buffer.addMember(nick, mode)
+      over()
 
-        buffer.setMembers(nicks)
+    end_of_names: (channel, raw, over) ->
+      if buffer = @getBuffer(channel)
         @emit 'event', B.channelInit(buffer)
       over()
 
@@ -486,6 +483,7 @@ class Connection extends EventEmitter
 
     selfPart: (channel, reason, over) ->
       if buffer = @getBuffer(channel)
+        # FIXME: Set autoJoin to false!
         buffer.setJoined false, =>
           buffer.addEvent
             type: 'you_parted_channel',
@@ -494,6 +492,7 @@ class Connection extends EventEmitter
         over()
 
     kick: (channel, nick, byNick, reason, message, over) ->
+      # FIXME: rejoin if autoRejoin
       if buffer = @getBuffer(channel)
         buffer.removeMember(nick)
         buffer.addEvent
@@ -521,40 +520,34 @@ class Connection extends EventEmitter
 
       queue.doneAddingJobs()
 
-    quit: (nick, reason, channels, message, over) ->
+    quit: (nick, reason, message, over) ->
       queue = new WorkingQueue(1)
 
-      for name in [ nick ].concat(channels)
-        do (name) =>
+      for buffer in @buffersForMember(nick)
+        do (buffer) =>
           queue.perform (bufferOver) =>
-            if buffer = @getBuffer(name)
-              buffer.removeMember(nick) if buffer instanceof ChannelBuffer
-              buffer.addEvent
-                type: 'quit'
-                nick: nick
-                msg:  reason, ->
-                  bufferOver()
-            else
-              bufferOver()
+            buffer.removeMember(nick) if buffer instanceof ChannelBuffer
+            buffer.addEvent
+              type: 'quit'
+              nick: nick
+              msg:  reason, ->
+                bufferOver()
 
       queue.onceDone over
       queue.doneAddingJobs()
 
-    kill: (nick, reason, channels, message, over) ->
+    kill: (nick, reason, message, over) ->
       queue = new WorkingQueue(1)
 
-      for name in [ nick ].concat(channels)
-        do (name) =>
+      for buffer in @buffersForMember(nick)
+        do (buffer) =>
           queue.perform (bufferOver) =>
-            if buffer = @getBuffer(name)
-              buffer.removeMember(nick)
-              buffer.addEvent
-                type:   'kill'
-                from:   nick,
-                reason: message,
-                bufferOver
-            else
-              bufferOver()
+            buffer.removeMember(nick) if buffer instanceof ChannelBuffer
+            buffer.addEvent
+              type:   'kill'
+              from:   nick,
+              reason: message,
+              bufferOver
 
       queue.onceDone over
       queue.doneAddingJobs()
@@ -650,8 +643,6 @@ class Connection extends EventEmitter
         # in the conversation buffer for the sender.
         bufferName = if to == @getNick() then from else to
 
-        console.log 'bufferName:', bufferName, 'from:', from, 'to:', to
-
         if bufferName.match(/^[&#]/)
           # If this is a channel notice, add to an existing buffer for that channel only.
           buffer = @getBuffer(bufferName) ? @consoleBuffer
@@ -660,27 +651,26 @@ class Connection extends EventEmitter
           # If this is notice is from a user, its OK to open a new conversation buffer.
           @getOrCreateBuffer bufferName, 'conversation', addEvent
 
-    nick: (oldnick, newnick, channels, message, over) ->
+    nick: (oldnick, newnick, message, over) ->
       queue = new WorkingQueue(1)
 
       # FIXME: @getBuffer(oldnick)?.setName(newnick)
 
-      for name in [ oldnick ].concat(channels)
-        if buffer = @getBuffer(name)
-          do (buffer) =>
-            queue.perform (addEventOver) =>
-              if buffer instanceof ChannelBuffer
-                buffer.renameMember(oldnick, newnick)
-              buffer.addEvent
-                type: 'nickchange'
-                newnick: newnick
-                oldnick: oldnick,
-                addEventOver
+      for buffer in @buffersForMember(oldnick)
+        do (buffer) =>
+          queue.perform (addEventOver) =>
+            if buffer instanceof ChannelBuffer
+              buffer.renameMember(oldnick, newnick)
+            buffer.addEvent
+              type: 'nickchange'
+              newnick: newnick
+              oldnick: oldnick,
+              addEventOver
 
       queue.onceDone over
       queue.doneAddingJobs()
 
-    selfNick: (oldnick, newnick, channels, message, over) ->
+    selfNick: (oldnick, newnick, message, over) ->
       queue = new WorkingQueue(1)
 
       # FIXME: @getBuffer(oldnick)?.setName(newnick)
@@ -692,17 +682,16 @@ class Connection extends EventEmitter
           oldnick: oldnick,
           addEventOver
 
-      for name in [ oldnick ].concat(channels)
-        if buffer = @getBuffer(name)
-          do (buffer) =>
-            queue.perform (addEventOver) =>
-              if buffer instanceof ChannelBuffer
-                buffer.renameMember(oldnick, newnick)
-              buffer.addEvent
-                type: 'you_nickchange'
-                newnick: newnick
-                oldnick: oldnick,
-                addEventOver
+      for buffer in @buffersForMember(oldnick)
+        do (buffer) =>
+          queue.perform (addEventOver) =>
+            if buffer instanceof ChannelBuffer
+              buffer.renameMember(oldnick, newnick)
+            buffer.addEvent
+              type: 'you_nickchange'
+              newnick: newnick
+              oldnick: oldnick,
+              addEventOver
 
       queue.onceDone over
       queue.doneAddingJobs()
