@@ -403,62 +403,9 @@ var BufferView = Backbone.View.extend({
   },
 
   addEvent: function (event) {
-    event = event.items.first().attributes;
-
-    var msg;
-
-    var template = Buffer.EVENT_TEXTS[event.type];
-    if (template) {
-      msg = _.template(template, event);
-    } else if (event.msg) {
-      msg = event.msg;
-    }
-
-    var timestamp = new Date(event.time*1000).format("shortTime");
-    var from      = event.nick || event.from;
-    var type      = event.type;
-
-    if (msg) {
-      var eventDiv = $('<div>')
-        .addClass('event')
-        .addClass('event_'+type)
-        .append($('<div>').addClass('when')
-          .append($('<div>').text(timestamp)));
-
-      if (event.highlight) {
-        eventDiv.addClass('highlight');
-      }
-
-      var linkifyCfg = {
-        handleLinks: function(links) {
-          return links.prop('target', '_new');
-        }
-      };
-
-      var self = this;
-
-      if (type == 'buffer_msg') {
-        eventDiv.append($('<div>').addClass('content')
-          .append($('<a>').attr('href', '#').addClass('who').text(from).click(function() {
-            self.model.connection.openBuffer(from, '');
-            return false;
-          }))
-          .append($('<span>').addClass('message').text(msg).linkify(linkifyCfg)));
-      } else if (type == 'buffer_me_msg') {
-        eventDiv.append($('<span>').addClass('content')
-          .append($('<a>').attr('href', '#').addClass('who').text('• ' + from).click(function() {
-            self.model.connection.openBuffer(from, '');
-            return false;
-          }))
-          .append($('<span>').text(msg).linkify(linkifyCfg)));
-      } else {
-        eventDiv.append($('<div>').addClass('content').append($('<span>').addClass('message').text(msg)));
-      }
-
-      $(this.el).find('.events').append(eventDiv);
-
-      this.scrollToBottom();
-    }
+    var view = new BufferEventView({ model: event });
+    $(this.el).find('.events').append(view.render().el);
+    this.scrollToBottom();
   },
 
   scrollToBottom: function () {
@@ -485,6 +432,210 @@ var BufferView = Backbone.View.extend({
       return;
     }
     this.model.say(text);
+  }
+});
+
+var BufferEventView = Backbone.View.extend({
+  className: 'event',
+
+  events: {
+    'click': 'toggleCollapsed'
+  },
+
+  initialize: function () {
+    this.model.bind('change', this.render, this);
+  },
+
+  render: function() {
+    var self = this;
+    this.$el.empty();
+
+    if (this.model.items.length > 1) {
+      this.$el.addClass('collapsed');
+      var summaryEl = this.renderSummary();
+      self.$el.append(summaryEl);
+    }
+
+    this.model.items.each(function (eventItem) {
+      var eventItemEl = self.renderEventItem(eventItem.attributes);
+      self.$el.append(eventItemEl);
+    });
+    return this;
+  },
+
+  renderEventItem: function(eventItem) {
+    var msg;
+
+    var template = Buffer.EVENT_TEXTS[eventItem.type];
+    if (template) {
+      msg = _.template(template, eventItem);
+    } else if (eventItem.msg) {
+      msg = eventItem.msg;
+    } else {
+      throw 'wtf'; /// eh?
+    }
+
+    var timestamp = new Date(eventItem.time*1000).format("shortTime");
+    var from      = eventItem.nick || eventItem.from;
+    var type      = eventItem.type;
+
+    var eventDiv = $('<div>')
+      .addClass('event_item')
+      .addClass('event_item_'+type)
+      .append($('<div>').addClass('when')
+        .append($('<div>').text(timestamp)));
+
+    if (eventItem.highlight) {
+      eventDiv.addClass('highlight');
+    }
+
+    var linkifyCfg = {
+      handleLinks: function(links) {
+        return links.prop('target', '_new');
+      }
+    };
+
+    var self = this;
+
+    if (type == 'buffer_msg') {
+      eventDiv.append($('<div>').addClass('content')
+        .append($('<a>').attr('href', '#').addClass('who').text(from).click(function() {
+          self.model.connection.openBuffer(from, '');
+          return false;
+        }))
+        .append($('<span>').addClass('message').text(msg).linkify(linkifyCfg)));
+    } else if (type == 'buffer_me_msg') {
+      eventDiv.append($('<span>').addClass('content')
+        .append($('<a>').attr('href', '#').addClass('who').text('• ' + from).click(function() {
+          self.model.connection.openBuffer(from, '');
+          return false;
+        }))
+        .append($('<span>').text(msg).linkify(linkifyCfg)));
+    } else {
+      eventDiv.append($('<div>').addClass('content').append($('<span>').addClass('message').text(msg)));
+    }
+
+    return eventDiv;
+  },
+
+  renderSummary: function() {
+    var self = this;
+
+    var summaryEl = $('<div>')
+      .addClass('event_item')
+      .addClass('summary');
+
+    var timestamp = new Date(this.model.items.first().get('time')*1000).format("shortTime");
+    summaryEl
+      .append($('<div>').addClass('when')
+      .append($('<div>').text(timestamp)));
+
+    var presenceChanges = {};
+    var nickChanges = [];
+
+    this.model.items.each(function(item) {
+      var itemType = item.get('type');
+      var presence_types = ['joined_channel', 'parted_channel', 'quit'];
+      if (_.contains(presence_types, itemType)) {
+        presenceChanges[item.get('nick')] = itemType;
+      } else if (itemType === 'nickchange') {
+        var oldnick = item.get('oldnick')
+        var newnick = item.get('newnick')
+        if (presenceChanges[oldnick] && presenceChanges[oldnick] === 'joined_channel') {
+          var presence = presenceChanges[oldnick];
+          delete presenceChanges[oldnick];
+          presenceChanges[newnick] = presence;
+        }
+        nickChanges.push([oldnick, newnick]);
+      }
+    });
+
+    var strings = [];
+    var seenNicks = [];
+
+    self.appendPresenceEvents(strings, presenceChanges, 'joined_channel', 'Joined: ', nickChanges, seenNicks);
+    self.appendPresenceEvents(strings, presenceChanges, 'parted_channel', 'Parted: ', nickChanges, seenNicks);
+    self.appendPresenceEvents(strings, presenceChanges, 'quit',           'Quit: ',   nickChanges, seenNicks);
+
+    _.each(nickChanges, function(nickChange) {
+      if ((!_.contains(seenNicks, nickChange[0])) && (!_.contains(seenNicks, nickChange[1]))) {
+        var chain = self.getNickChain(nickChanges, nickChange[0]);
+        _.each(chain, function(nick) { seenNicks.push(nick) });
+        var firstNick = chain[0];
+        var lastNick = _.last(chain);
+        strings.push(firstNick + ' → ' + lastNick);
+      }
+    });
+
+    var contentEl = $('<div>')
+      .addClass('content')
+      .text(strings.join(' • '));
+
+    summaryEl.append(contentEl);
+
+    return summaryEl;
+  },
+
+  appendPresenceEvents: function(strings, presenceChanges, type, textPrefix, nickChanges, seenNicks) {
+    var self = this;
+
+    var nicks = _.filter(_.keys(presenceChanges), function(nick) {
+      return presenceChanges[nick] === type;
+    });
+
+    if (_.isEmpty(nicks)) {
+      return;
+    }
+
+    nicks = _.map(nicks, function(nick) {
+      var nickChain = self.getNickChainReverse(nickChanges, nick);
+      if (nickChain.length <= 1) {
+        return nick;
+      }
+      // Last item is current nick
+      nickChain.splice(nickChain.length - 1, 1);
+
+      // Don't need to show nick change if included in presence event
+      _.each(nickChain, function(nick) { seenNicks.push(nick); });
+
+      return nick + ' (was ' + nickChain.join(', ') + ')';
+    });
+
+    strings.push(textPrefix + nicks.join(', '));
+  },
+
+  getNickChain: function(nickChanges, startNick) {
+    var chain = [startNick];
+    _.each(nickChanges, function(nickChange) {
+      var lastNick = _.last(chain);
+      if (nickChange[0] === lastNick) {
+        chain.push(nickChange[1]);
+      }
+    });
+    return chain;
+  },
+
+  getNickChainReverse: function(nickChanges, endNick) {
+    nickChanges = _.clone(nickChanges);
+    nickChanges.reverse();
+
+    var chain = [endNick];
+    _.each(nickChanges, function(nickChange) {
+      var lastNick = _.last(chain);
+      if (nickChange[1] === lastNick) {
+        chain.push(nickChange[0]);
+      }
+    });
+
+    chain.reverse();
+    return chain;
+  },
+
+  toggleCollapsed: function() {
+    if (this.model.items.length > 1) {
+      this.$el.toggleClass('collapsed');
+      this.el.scrollIntoView();
+    }
   }
 });
 

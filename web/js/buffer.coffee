@@ -85,7 +85,7 @@ class Buffer extends Backbone.Model
       lastEvent = @backlog.last()
       item = new BufferEventItem(message)
       if lastEvent? and lastEvent.shouldMerge(item)
-        lastEvent.addItem(item)
+        lastEvent.items.add(item)
       else
         @backlog.add(new BufferEvent(item))
 

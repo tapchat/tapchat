@@ -1,7 +1,7 @@
 class Connection extends Backbone.Model
-  Connection.STATUS_DISCONNECTED = 'disconnected'
-  Connection.STATUS_CONNECTING   = 'connecting'
-  Connection.STATUS_CONNECTED    = 'connected'
+  @STATUS_DISCONNECTED = 'disconnected'
+  @STATUS_CONNECTING   = 'connecting'
+  @STATUS_CONNECTED    = 'connected'
 
   idAttribute: '_cid'
 

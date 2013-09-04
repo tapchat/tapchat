@@ -187,16 +187,9 @@ body {
   background: #EEE;
 }
 
-/*
-#networks li.status-connected.active .networkInfo {
-  background: #e1e1e1;
-}
-*/
-
 #networks li a, #users ul li a {
   padding: 6px;
   color: inherit;
-  font-weight: bold;
   text-decoration: none;
   display: block;
 }
@@ -346,10 +339,21 @@ body {
 }
 
 .buffer .event {
+  overflow: hidden;
+}
+
+.buffer .event .event_item {
   padding: 2px;
   padding-bottom: 4px;
   margin-bottom: 0px;
-  overflow: hidden;
+}
+
+.buffer .event.collapsed .event_item {
+  display: none;
+}
+
+.buffer .event.collapsed .event_item.summary {
+  display: block !important;
 }
 
 .buffer .event.highlight {
