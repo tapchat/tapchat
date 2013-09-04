@@ -75,16 +75,16 @@ var AppView = Backbone.View.extend({
 
   setTitle: function (text) {
     if (_.isEmpty(text)) {
-      $('.page-title').html('TapChat');
+      $('.page-title').text('TapChat');
       document.title = 'TapChat';
     } else {
-      $('.page-title').html(text);
+      $('.page-title').text(text);
       document.title = text + ' - TapChat';
     }
   },
 
   setTopic: function(text) {
-    $('.page-topic').html(text);
+    $('.page-topic').text(text);
   },
 
   showAddNetworkDialog: function () {
@@ -239,7 +239,7 @@ var BufferListRowView = Backbone.View.extend({
       highlights = '';
     }
 
-    var a = $('<a>').addClass('tappable').html(this.model.get('name'));
+    var a = $('<a>').addClass('tappable').text(this.model.get('name'));
     a.append($('<span>').addClass('badge badge-important').text(highlights));
 
     $(this.el).empty();
@@ -381,11 +381,11 @@ var BufferView = Backbone.View.extend({
     var status = this.model.connection.get('status');
 
     if (status != Connection.STATUS_CONNECTED) {
-      statusBar.find('.status-text').html(status);
+      statusBar.find('.status-text').text(status);
       statusBar.show();
     } else {
       if ((this.model instanceof ChannelBuffer) && (!this.model.get('joined'))) {
-        statusBar.find('.status-text').html('Not in channel.');
+        statusBar.find('.status-text').text('Not in channel.');
         statusBar.show();
       } else {
         statusBar.hide(); 
@@ -652,7 +652,7 @@ var MainMenuView = Backbone.View.extend({
   },
 
   updateUser: function (user) {
-    $('#nav .username').html(user.name);
+    $('#nav .username').text(user.name);
     $('#admin-item').toggleClass('hide', !user.is_admin);
   },
 
@@ -727,15 +727,15 @@ var AdminView = Backbone.View.extend({
 
   render: function() {
     var list = this.$('#admin-users-list');
-    list.html('');
+    list.empty();
     if (this.users) {
       this.users.forEach(function(user) {
-        var editLink = $('<a>').attr('href', '#').html('Edit');
+        var editLink = $('<a>').attr('href', '#').text('Edit');
         editLink.tappable(function() {
           new AdminEditUserDialog({model: user}).show();
         });
 
-        var deleteLink = $('<a>').attr('href', '#').html('Delete');
+        var deleteLink = $('<a>').attr('href', '#').text('Delete');
         deleteLink.tappable(function() {
           if (confirm("Are you sure?")) {
             $.ajax('/admin/users/' + user.id, { type: 'DELETE' })
