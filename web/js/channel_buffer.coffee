@@ -6,6 +6,9 @@ class ChannelBuffer extends Buffer
   constructor: (connection, attrs) ->
     super(connection, attrs)
     @members = new MemberList()
+    @members.on 'reset', (col, opts) ->
+      _.each opts.previousModels, (model) ->
+        model.trigger 'destroy'
 
   join: ->
     @connection.join(@get('name'))
@@ -20,10 +23,15 @@ class ChannelBuffer extends Buffer
     super
     @set('joined', attrs.joined)
 
+  clientDisconnected: ->
+    super
+    @set('joined', false)
+
   messageHandlers:
     channel_init: (message) ->
       if message.topic?
         @set('topic', message.topic)
+      @members.reset()
       for memberAttrs in message.members
         @members.add(new Member(this, memberAttrs))
       @set('joined', true)
@@ -56,5 +64,9 @@ class ChannelBuffer extends Buffer
 
     you_nickchange: (message) ->
       @members.updateNick(message)
+
+    socket_closed: (message) ->
+      @members.reset();
+      @set('joined', false)
 
 window.ChannelBuffer = ChannelBuffer

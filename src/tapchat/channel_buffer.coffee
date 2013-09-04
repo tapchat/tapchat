@@ -75,4 +75,7 @@ class ChannelBuffer extends ChatBuffer
     return callback() if this instanceof ChannelBuffer and @isJoined
     super(callback)
 
+  getIsActive: () ->
+    super && @isJoined
+
 module.exports = ChannelBuffer

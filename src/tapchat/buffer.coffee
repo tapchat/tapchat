@@ -60,4 +60,7 @@ class Buffer extends EventEmitter
       @lastSeenEid = eid
       callback()
 
+  getIsActive: () ->
+    (!@isArchived)
+
 module.exports = Buffer

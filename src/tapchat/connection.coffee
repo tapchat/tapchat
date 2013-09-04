@@ -230,7 +230,7 @@ class Connection extends EventEmitter
   addEventToAllBuffers: (event, callback) ->
     queue = new WorkingQueue(1)
     queue.onceDone callback
-    for buffer in @buffers
+    for buffer in @buffers when buffer.getIsActive()
       do (buffer) =>
         queue.perform (over) =>
           buffer.addEvent event, over
@@ -345,17 +345,18 @@ class Connection extends EventEmitter
 
       queue = new WorkingQueue(1)
 
-      for buffer in @buffers when buffer instanceof ChannelBuffer
-        do (buffer) =>
-          queue.perform (bufferOver) =>
-            buffer.setJoined(false, bufferOver)
+      queue.perform (queueOver) =>
+        @addEventToAllBuffers
+          type: 'socket_closed',
+          queueOver
 
-      queue.onceDone over
+      queue.onceDone =>
+        for buffer in @buffers when buffer instanceof ChannelBuffer
+          # Don't use setJoined here so DB isn't modified.
+          buffer.isJoined = false
+        over()
+
       queue.doneAddingJobs()
-
-      @addEventToAllBuffers
-        type: 'socket_closed',
-        over
 
     abort: (retryCount, over) ->
       @addEventToAllBuffers
@@ -483,7 +484,6 @@ class Connection extends EventEmitter
 
     selfPart: (channel, reason, over) ->
       if buffer = @getBuffer(channel)
-        # FIXME: Set autoJoin to false!
         buffer.setJoined false, =>
           buffer.addEvent
             type: 'you_parted_channel',
@@ -507,16 +507,17 @@ class Connection extends EventEmitter
     selfQuit: (reason, over) ->
       queue = new WorkingQueue(1)
 
-      for buffer in @buffers when buffer instanceof ChannelBuffer
-        do (buffer) =>
-          queue.perform (bufferOver) =>
-            buffer.setJoined(false, bufferOver)
-
-      queue.onceDone =>
+      queue.perform (queueOver) =>
         @addEventToAllBuffers
           type: 'quit_server'
           msg:  reason,
-          over
+          queueOver
+
+      queue.onceDone =>
+        for buffer in @buffers when buffer instanceof ChannelBuffer
+          # Don't use setJoined here so DB isn't modified.
+          buffer.isJoined = false
+        over()
 
       queue.doneAddingJobs()
 
