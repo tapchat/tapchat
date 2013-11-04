@@ -354,6 +354,7 @@ class Connection extends EventEmitter
         for buffer in @buffers when buffer instanceof ChannelBuffer
           # Don't use setJoined here so DB isn't modified.
           buffer.isJoined = false
+          buffer.members = {}
         over()
 
       queue.doneAddingJobs()
@@ -517,6 +518,7 @@ class Connection extends EventEmitter
         for buffer in @buffers when buffer instanceof ChannelBuffer
           # Don't use setJoined here so DB isn't modified.
           buffer.isJoined = false
+          buffer.members = {}
         over()
 
       queue.doneAddingJobs()
