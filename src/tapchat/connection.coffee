@@ -59,6 +59,7 @@ class Connection extends EventEmitter
       realName:    options.real_name
       password:    options.server_pass
       autoConnect: false
+      retryCount:  5
 
     @addEventListeners()
 
