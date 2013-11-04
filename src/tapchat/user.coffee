@@ -135,6 +135,11 @@ class User
         over()
     return message
 
+  isBufferSelected: (bid) ->
+    for client in @clients
+      return true if client.selectedBid == bid
+    return false
+
   prepareMessage: (message) ->
     now = parseInt(Date.now() / 1000)
     message.time      = now   unless message.time
@@ -166,7 +171,7 @@ class User
 
     Log.silly 'BROADCAST', JSON.stringify(message)
     unless message.is_backlog
-      if message.highlight
+      if message.highlight and message.bid and (!@isBufferSelected(message.bid))
         queue.perform (over) =>
           @pushClient.sendPush(message, over)
 
@@ -220,7 +225,7 @@ class User
   messageHandlers:
     heartbeat: (client, message, callback) ->
       if message.selectedBuffer?
-        @selectedBid = message.selectedBuffer
+        client.selectedBid = message.selectedBuffer
 
       if message.seenEids?
         if typeof message.seenEids == 'string'
