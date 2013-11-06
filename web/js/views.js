@@ -610,7 +610,7 @@ var BufferEventView = Backbone.View.extend({
   appendPresenceEvents: function(strings, presenceChanges, type, textPrefix, nickChanges, seenNicks) {
     var self = this;
 
-    var nicks = _.chain(presenceChanges).keys().filter(function(nick) {
+    var nicks = _.filter(_.keys(presenceChanges), function(nick) {
       return presenceChanges[nick] === type;
     });
 
