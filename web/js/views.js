@@ -363,11 +363,21 @@ var BufferView = Backbone.View.extend({
       $.getJSON('/chat/backlog?' + params, function(events) {
         var divider = $('<hr>');
         $(self.el).find('.events').prepend(divider);
-        _.chain(events).reverse().each(function (eventJson) {
+        var lastEvent = null;
+        var eventsToPrepend = [];
+        _.each(events, function (eventJson) {
           if (eventJson.msg || Buffer.EVENT_TEXTS[eventJson.type]) {
-            var eventModel = new BufferEvent(eventJson);
-            self.model.backlog.add(eventModel, { at: 0 });
+            var item = new BufferEventItem(eventJson);
+            if (lastEvent && lastEvent.shouldMerge(item)) {
+              lastEvent.items.add(item);
+            } else {
+              lastEvent = new BufferEvent(item);
+              eventsToPrepend.push(lastEvent);
+            }
           }
+        });
+        _.chain(eventsToPrepend).reverse().each(function(item) {
+          self.model.backlog.add(item, { at: 0 });
         });
         divider[0].scrollIntoView();
       });
