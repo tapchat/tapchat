@@ -440,7 +440,8 @@ var BufferView = Backbone.View.extend({
   },
 
   scrollToBottom: function () {
-    this.$('.events').scrollTop(this.$('.events')[0].scrollHeight);
+    var parent = this.$('.events').parent();
+    parent.scrollTop(parent[0].scrollHeight);
   },
 
   sendMessage: function (text) {
