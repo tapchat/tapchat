@@ -360,6 +360,11 @@ body {
   display: block !important;
 }
 
+.buffer .event .event_item_error .content,
+.buffer .event .event_item_error .when div {
+  color: #aaa;
+}
+
 .buffer .event.highlight {
   background: rgba(100, 163, 78, 0.2);
 }

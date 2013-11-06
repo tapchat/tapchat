@@ -495,58 +495,70 @@ var BufferEventView = Backbone.View.extend({
   },
 
   renderEventItem: function(eventItem) {
-    var msg;
-
-    var template = Buffer.EVENT_TEXTS[eventItem.type];
-    if (template) {
-      msg = _.template(template, eventItem);
-    } else if (eventItem.msg) {
-      msg = eventItem.msg;
-    } else {
-      throw 'Unknown event type: ' + eventItem.type; /// eh?
-    }
-
     var timestamp = new Date(eventItem.time*1000).format("shortTime");
     var from      = eventItem.nick || eventItem.from;
     var type      = eventItem.type;
 
-    var eventDiv = $('<div>')
-      .addClass('event_item')
-      .addClass('event_item_'+type)
-      .append($('<div>').addClass('when')
-        .append($('<div>').text(timestamp)));
+    try {
+      var msg;
 
-    if (eventItem.highlight) {
-      eventDiv.addClass('highlight');
-    }
-
-    var linkifyCfg = {
-      handleLinks: function(links) {
-        return links.prop('target', '_new');
+      var template = Buffer.EVENT_TEXTS[eventItem.type];
+      if (template) {
+        msg = _.template(template, eventItem);
+      } else if (eventItem.msg) {
+        msg = eventItem.msg;
+      } else {
+        throw 'Unknown event type: ' + eventItem.type; /// eh?
       }
-    };
 
-    var self = this;
+      var eventDiv = $('<div>')
+        .addClass('event_item')
+        .addClass('event_item_'+type)
+        .append($('<div>').addClass('when')
+          .append($('<div>').text(timestamp)));
 
-    if (type == 'buffer_msg') {
-      eventDiv.append($('<div>').addClass('content')
-        .append($('<a>').attr('href', '#').addClass('who').text(from).click(function() {
-          self.model.connection.openBuffer(from, '');
-          return false;
-        }))
-        .append($('<span>').addClass('message').text(msg).linkify(linkifyCfg)));
-    } else if (type == 'buffer_me_msg') {
-      eventDiv.append($('<span>').addClass('content')
-        .append($('<a>').attr('href', '#').addClass('who').text('• ' + from).click(function() {
-          self.model.connection.openBuffer(from, '');
-          return false;
-        }))
-        .append($('<span>').text(msg).linkify(linkifyCfg)));
-    } else {
-      eventDiv.append($('<div>').addClass('content').append($('<span>').addClass('message').text(msg)));
+      if (eventItem.highlight) {
+        eventDiv.addClass('highlight');
+      }
+
+      var linkifyCfg = {
+        handleLinks: function(links) {
+          return links.prop('target', '_new');
+        }
+      };
+
+      var self = this;
+
+      if (type == 'buffer_msg') {
+        eventDiv.append($('<div>').addClass('content')
+          .append($('<a>').attr('href', '#').addClass('who').text(from).click(function() {
+            self.model.connection.openBuffer(from, '');
+            return false;
+          }))
+          .append($('<span>').addClass('message').text(msg).linkify(linkifyCfg)));
+      } else if (type == 'buffer_me_msg') {
+        eventDiv.append($('<span>').addClass('content')
+          .append($('<a>').attr('href', '#').addClass('who').text('• ' + from).click(function() {
+            self.model.connection.openBuffer(from, '');
+            return false;
+          }))
+          .append($('<span>').text(msg).linkify(linkifyCfg)));
+      } else {
+        eventDiv.append($('<div>').addClass('content').append($('<span>').addClass('message').text(msg)));
+      }
+
+      return eventDiv;
+    } catch (e) {
+      var errorDiv = $('<div>')
+        .addClass('event_item')
+        .addClass('event_item_'+type)
+        .addClass('event_item_error')
+        .append($('<div>').addClass('when')
+          .append($('<div>').text(timestamp)));
+        errorDiv.append($('<div>').addClass('content')
+          .text('TapChat error: "' + e + '". ' + JSON.stringify(eventItem)));
+      return errorDiv;
     }
-
-    return eventDiv;
   },
 
   renderSummary: function() {
