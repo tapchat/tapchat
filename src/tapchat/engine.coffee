@@ -167,13 +167,23 @@ class Engine
 
     @app.get '/chat/backlog', restrict, (req, res) =>
       user = req.user
-
-      events = []
-
-      user.getBacklog ((event) =>
-        events.push(user.prepareMessage(event))
-      ), ->
-        res.json(events)
+      bid = req.param('bid')
+      cid = req.param('cid')
+      if bid and cid
+        num      = req.param('num') || 150
+        beforeid = req.param('beforeid')
+        @db.selectEventsRange cid, bid, num, beforeid, (rows) ->
+          rows = ((merge
+            eid:  row.eid,
+            time: row.created_at,
+            JSON.parse(row.data)) for row in rows)
+          res.json(rows)
+      else
+        events = []
+        user.getBacklog ((event) =>
+          events.push(user.prepareMessage(event))
+        ), ->
+          res.json(events)
 
     @app.get '/admin/users', restrict_admin, (req, res) =>
       user = req.user

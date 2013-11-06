@@ -288,7 +288,7 @@ body {
   bottom: 32px;
 }
 
-.events {
+.events-inner {
   height: 100%;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
@@ -296,6 +296,10 @@ body {
   -webkit-box-flex: 1;
   -moz-box-flex: 1;
   box-flex: 1;
+}
+
+.events hr {
+  margin: 10px 0;
 }
 
 #buffers div.buffer {
@@ -563,4 +567,14 @@ input.error:focus, select.error:focus, textarea.error:focus {
 
 #page-admin #admin-users-list {
   padding: 1em 0 0 0;
+}
+
+.load-more {
+  padding: 8px 10px;
+  background: #eee;
+  cursor: pointer;
+}
+
+.load-more i {
+  opacity: 0.8
 }

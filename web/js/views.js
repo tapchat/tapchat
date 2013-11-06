@@ -355,6 +355,23 @@ var BufferView = Backbone.View.extend({
     this.model.bind('destroy', this.remove, this);
 
     this.model.backlog.bind('add', this.addEvent, this);
+
+    // This is all a big hack.
+    this.$('.load-more').click(function() {
+      var minEid = self.model.backlog.minEid;
+      var params = $.param({cid: self.model.connection.id, bid: self.model.id, num: 150, beforeid: minEid});
+      $.getJSON('/chat/backlog?' + params, function(events) {
+        var divider = $('<hr>');
+        $(self.el).find('.events').prepend(divider);
+        _.chain(events).reverse().each(function (eventJson) {
+          if (eventJson.msg || Buffer.EVENT_TEXTS[eventJson.type]) {
+            var eventModel = new BufferEvent(eventJson);
+            self.model.backlog.add(eventModel, { at: 0 });
+          }
+        });
+        divider[0].scrollIntoView();
+      });
+    });
   },
 
   getTitle: function () {
@@ -402,10 +419,14 @@ var BufferView = Backbone.View.extend({
     }
   },
 
-  addEvent: function (event) {
+  addEvent: function (event, collection, options) {
     var view = new BufferEventView({ model: event });
-    $(this.el).find('.events').append(view.render().el);
-    this.scrollToBottom();
+    if (options && options.at == 0) {
+      $(this.el).find('.events').prepend(view.render().el);
+    } else {
+      $(this.el).find('.events').append(view.render().el);
+      this.scrollToBottom();
+    }
   },
 
   scrollToBottom: function () {
@@ -472,7 +493,7 @@ var BufferEventView = Backbone.View.extend({
     } else if (eventItem.msg) {
       msg = eventItem.msg;
     } else {
-      throw 'wtf'; /// eh?
+      throw 'Unknown event type: ' + eventItem.type; /// eh?
     }
 
     var timestamp = new Date(eventItem.time*1000).format("shortTime");
@@ -579,7 +600,7 @@ var BufferEventView = Backbone.View.extend({
   appendPresenceEvents: function(strings, presenceChanges, type, textPrefix, nickChanges, seenNicks) {
     var self = this;
 
-    var nicks = _.filter(_.keys(presenceChanges), function(nick) {
+    var nicks = _.chain(presenceChanges).keys().filter(function(nick) {
       return presenceChanges[nick] === type;
     });
 
@@ -616,17 +637,13 @@ var BufferEventView = Backbone.View.extend({
   },
 
   getNickChainReverse: function(nickChanges, endNick) {
-    nickChanges = _.clone(nickChanges);
-    nickChanges.reverse();
-
     var chain = [endNick];
-    _.each(nickChanges, function(nickChange) {
+    _.chain(nickChanges).reverse().each(function(nickChange) {
       var lastNick = _.last(chain);
       if (nickChange[1] === lastNick) {
         chain.push(nickChange[0]);
       }
     });
-
     chain.reverse();
     return chain;
   },

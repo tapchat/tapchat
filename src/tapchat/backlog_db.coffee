@@ -265,6 +265,30 @@ class BacklogDB
         throw err if err
         callback(rows)
 
+  selectEventsRange: (cid, bid, num, beforeid, callback) ->
+    # FIXME: cid not used
+    query = """
+      SELECT eid, bid, data, created_at
+      FROM events
+      WHERE eid IN (
+          SELECT eid
+          FROM EVENTS
+          WHERE
+            bid = $bid AND
+            eid < $beforeid
+          ORDER BY eid DESC
+          LIMIT $limit
+      )
+      ORDER BY eid ASC
+    """
+    @db.all query,
+      $bid:      bid
+      $beforeid: beforeid
+      $limit:    num,
+      (err, rows) ->
+        throw err if err
+        callback(rows)
+
   getAllLastSeenEids: (uid, callback) ->
     query = """
       SELECT cid, bid, last_seen_eid

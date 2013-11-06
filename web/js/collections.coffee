@@ -23,6 +23,15 @@ class MemberList extends Backbone.Collection
 
 class BufferEventList extends Backbone.Collection
   model: BufferEvent
+  constructor: () ->
+    super
+    @minEid = -1
+    @bind 'add', (event) =>
+      eid = event.items.first().get('eid')
+      if @minEid < 0
+        @minEid = eid
+      else
+        @minEid = Math.min(@minEid, eid)
 
 class BufferEventItemList extends Backbone.Collection
   model: BufferEventItem
