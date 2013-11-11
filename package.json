@@ -44,7 +44,8 @@
     "passport": "0.1.17",
     "passport-local": "0.1.6",
     "gzippo": "0.2.0",
-    "is-running": "1.0.3"
+    "is-running": "1.0.3",
+    "source-map-support": "0.2.4"
   },
   "devDependencies": {},
   "engines": {

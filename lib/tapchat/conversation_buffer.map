@@ -1,0 +1,10 @@
+{
+  "version": 3,
+  "file": "conversation_buffer.js",
+  "sourceRoot": "../..",
+  "sources": [
+    "src/tapchat/conversation_buffer.coffee"
+  ],
+  "names": [],
+  "mappings": ";AAoBA;CAAA,KAAA,8BAAA;KAAA;oSAAA;;CAAA,CAAA,CAAa,IAAA,GAAb,KAAa;;CAAb,CAEM;CACJ;;;;;CAAA;;CAAA,EAAM,CAAN,UAAA;;CAAA;;CAD+B;;CAFjC,CAKA,CAAiB,GAAX,CAAN,WALA;CAAA"
+}

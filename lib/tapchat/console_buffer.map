@@ -1,0 +1,10 @@
+{
+  "version": 3,
+  "file": "console_buffer.js",
+  "sourceRoot": "../..",
+  "sources": [
+    "src/tapchat/console_buffer.coffee"
+  ],
+  "names": [],
+  "mappings": ";AAAA;CAAA,KAAA,qBAAA;KAAA;oSAAA;;CAAA,CAAA,CAAS,GAAT,CAAS,GAAA;;CAAT,CAEM;CACJ;;;;;CAAA;;CAAA,EAAM,CAAN,KAAA;;CAAA;;CAD0B;;CAF5B,CAKA,CAAiB,GAAX,CAAN,MALA;CAAA"
+}

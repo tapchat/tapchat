@@ -12,6 +12,8 @@ var Config = require(path.join(lib, 'config'));
 var Engine = require(path.join(lib, 'engine'));
 var Log    = require(path.join(lib, 'log'));
 
+require('source-map-support').install()
+
 program
   .version(Config.getAppVersion());
 
