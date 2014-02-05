@@ -133,7 +133,7 @@ class Connection extends EventEmitter
     @buffers.splice(@buffers.indexOf(buffer), 1)
     @emit 'event', B.deleteBuffer(buffer)
 
-  sendBacklog: (client, callback) ->
+  sendBacklog: (client, done) ->
     queue = new WorkingQueue(1)
 
     send = (message) =>
@@ -147,8 +147,9 @@ class Connection extends EventEmitter
       # HACK: end_of_backlog not needed for a new connection (being broadcast to everyone)
       if (event.type != 'end_of_backlog' || (event.type == 'end_of_backlog' and !client))
         send event
-      ), ->
-        queue.onceDone callback
+      ), =>
+
+        queue.onceDone done
         queue.doneAddingJobs()
 
   getBacklog: (callback, done) ->
@@ -176,7 +177,8 @@ class Connection extends EventEmitter
       if @isConnecting()
         callback(merge(B.connecting(this), bid: buffer.id)) for buffer in @buffers
 
-    queue.onceDone done
+      done()
+
     queue.doneAddingJobs()
 
   edit: (options, callback) ->

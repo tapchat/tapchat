@@ -95,8 +95,7 @@ class User
       Log.info 'websocket client: disconnected',
         code: event.code,
         reason: event.reason
-      index = @clients.indexOf(client)
-      @clients.splice(index, 1)
+      @removeClient(client)
 
     @send client,
       type:          'header'
@@ -185,22 +184,16 @@ class User
 
     return message
 
-  sendBacklog: (client) ->
-    @getBacklog (event) =>
-      @send client, event
-
-  getBacklog: (callback, done) ->
+  sendBacklog: (client, done) =>
     queue = new WorkingQueue(1)
 
     for conn in @connections
       do (conn) =>
         queue.perform (over) =>
-          conn.getBacklog ((event) ->
-            callback event
-          ), over
+          conn.sendBacklog(client, over)
 
     queue.onceDone =>
-      callback
+      @send client,
         type: 'backlog_complete'
       done() if done
 
