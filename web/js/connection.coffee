@@ -145,6 +145,9 @@ class Connection extends Backbone.Model
         @trigger('open-buffer', buffer)
         @pendingOpenBufferName = null
 
+    invalid_cert: (message) ->
+      @trigger('invalid-cert', message)
+
   initializedMessageHandlers:
     #status_changed: (message) ->
     #  @set('status', message.new_status)
@@ -192,8 +195,5 @@ class Connection extends Backbone.Model
 
     you_nickchange: (message) ->
       @set('nick', message.newnick)
-
-    invalid_cert: (message) ->
-      @trigger('invalid-cert', message)
 
 window.Connection = Connection

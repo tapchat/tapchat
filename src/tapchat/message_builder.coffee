@@ -107,3 +107,10 @@ module.exports =
   connectionDeleted: (conn) ->
     type: 'connection_deleted'
     cid: conn.id
+
+  invalidCert: (conn) ->
+    type:        'invalid_cert'
+    cid:         conn.id
+    hostname:    conn.getHostName()
+    fingerprint: conn.pendingSSL.cert.fingerprint
+    error:       conn.pendingSSL.error

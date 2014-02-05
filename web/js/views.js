@@ -687,6 +687,7 @@ var MainMenuView = Backbone.View.extend({
 
   addNetwork: function (network) {
     network.bind('open-buffer', this.openBuffer, this);
+    network.bind('invalid-cert', this.invalidCert, this);
     var view = new NetworkListRowView({ model: network });
     $('#main-menu').prepend(view.render().el);
   },
@@ -699,6 +700,10 @@ var MainMenuView = Backbone.View.extend({
   openBuffer: function(buffer) {
     window.location = '#' + buffer.connection.id + '/' + buffer.id;
     app.view.showPage(buffer.view);
+  },
+
+  invalidCert: function(message) {
+    app.view.showCertDialog(message);
   }
 });
 

@@ -149,6 +149,11 @@ class Connection extends EventEmitter
         send event
       ), =>
 
+        # After backlog, notify about any pending SSL verification.
+        if @pendingSSL
+          queue.perform (over) =>
+            @user.send(client, B.invalidCert(this), over)
+
         queue.onceDone done
         queue.doneAddingJobs()
 
@@ -188,15 +193,12 @@ class Connection extends EventEmitter
       callback(row)
 
   acceptCert: (fingerprint, accept, done) ->
-    if (!@pendingSSLCallback) || @pendingSSLFingerprint != fingerprint
-      done()
-      return
+    return done() unless @pendingSSL? && @pendingSSL.cert.fingerprint == fingerprint
 
-    fingerpint = @pendingSSLFingerprint
-    callback   = @pendingSSLCallback
+    fingerpint = @pendingSSL.fingerpint
+    callback   = @pendingSSL.callback
 
-    @pendingSSLFingerprint = null
-    @pendingSSLCallback    = null
+    @pendingSSL = null
 
     unless accept
       callback(false)
@@ -724,21 +726,18 @@ class Connection extends EventEmitter
         over()
       else
         # Ask the user
-        @pendingSSLFingerprint = cert.fingerprint
-        @pendingSSLCallback    = callback
-        @user.broadcast
-          cid:         @id
-          type:        'invalid_cert'
-          hostname:    @getHostName()
-          fingerprint: cert.fingerprint
-          error:       error,
-          over
+        @pendingSSL =
+          cert: cert
+          error: error
+          callback: callback
+
+        @user.broadcast(B.invalidCert(this), over)
 
     netError: (error, over) ->
       Log.error "Net error [#{@getName()}]: #{error} #{error.stack}"
       @consoleBuffer.addEvent
         type: 'error'
-        msg: error,
+        msg: error.message,
         over
 
     error: (error, over) ->
