@@ -184,16 +184,22 @@ class User
 
     return message
 
-  sendBacklog: (client, done) =>
+  sendBacklog: (client) ->
+    @getBacklog (event) =>
+      @send client, event
+
+  getBacklog: (callback, done) ->
     queue = new WorkingQueue(1)
 
     for conn in @connections
       do (conn) =>
         queue.perform (over) =>
-          conn.sendBacklog(client, over)
+          conn.getBacklog ((event) ->
+            callback event
+          ), over
 
     queue.onceDone =>
-      @send client,
+      callback
         type: 'backlog_complete'
       done() if done
 

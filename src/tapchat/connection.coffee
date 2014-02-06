@@ -150,9 +150,7 @@ class Connection extends EventEmitter
       ), =>
 
         # After backlog, notify about any pending SSL verification.
-        if @pendingSSL
-          queue.perform (over) =>
-            @user.send(client, B.invalidCert(this), over)
+        send B.invalidCert(this) if @pendingSSL
 
         queue.onceDone done
         queue.doneAddingJobs()
