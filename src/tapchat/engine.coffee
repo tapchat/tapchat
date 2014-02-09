@@ -74,11 +74,18 @@ class Engine
 
     @app = Express()
 
+    sessionChecker = (req, res, next) =>
+      checkSession req.cookies.session, (session, user) =>
+        res.clearCookie('session', {secure: true, path: '/'}) unless user?
+        res.clearCookie('session', {secure: true, path: '/chat'}) unless user?
+        next()
+
     @app.use(Express.logger()) if Log.level == 'silly'
     @app.use(Express.cookieParser())
     @app.use(Express.bodyParser())
     @app.use(Express.methodOverride())
     @app.use(Passport.initialize())
+    @app.use(sessionChecker)
     @app.use(Express.static(__dirname + '/../../web'))
     @app.use(Gzippo.compress())
 
@@ -89,13 +96,28 @@ class Engine
         str = Eco.render(str, options)
         fn(null, str)
 
+    checkSession = (sessionId, callback) =>
+      session = @sessions.get(sessionId)
+
+      # Invalid Session ID.
+      return callback(null) unless session?
+
+      user = @users[session.uid]
+
+      # Invalid User ID.
+      unless user?
+        @sessions.destroy(sessionId)
+        return callback(null, null)
+
+      return callback(session, user)
+
     restrict = (req, res, next) =>
-      session = @sessions.get(req.cookies.session)
-      unless session
-        res.send(401, 'Unauthorized')
-      else
+      checkSession req.cookies.session, (session, user) =>
+        unless user
+          res.send(401, 'Unauthorized')
+          return
         req.session = session
-        req.user = @users[session.uid]
+        req.user = user
         return next()
 
     restrict_admin = (req, res, next) ->
@@ -104,9 +126,6 @@ class Engine
           res.send(401, 'Unauthorized')
         else
           return next()
-
-    @app.get '/', (req, res) =>
-      res.render 'index.html'
 
     @app.post '/chat/login', (req, res) =>
       req.body.username = req.body.email if req.body.email?
@@ -227,14 +246,11 @@ class Engine
     @web.addListener 'upgrade', (req, socket, head) =>
       req.method = 'UPGRADE' # Prevent any matching GET handlers from running
       res = new Http.ServerResponse(req)
+      res.assignSocket(socket)
       @app.handle req, res, =>
-        session = @sessions.get(req.cookies.session)
-        unless session
-          req.socket.end('HTTP/1.1 401 Unauthorized\r\n\r\n')
-          return
-        user = @users[session.uid]
-        ws = new WebSocket(req, socket, head)
-        user.addClient(ws, req.param('inband', false))
+        restrict req, res, =>
+          ws = new WebSocket(req, socket, head)
+          req.user.addClient(ws, req.param('inband', false))
 
     @web.listen port, '::', =>
       console.log "\nTapChat ready at https://localhost:#{port}\n"
