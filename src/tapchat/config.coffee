@@ -52,7 +52,7 @@ Config =
       if config.password
         Config.migrateOldInitialUser(config, callback)
       else
-        callback(config, null)
+        callback(config)
 
   setup: (callback)->
     console.log 'Welcome to TapChat!'
@@ -82,8 +82,9 @@ Config =
       Config.generateCert over
 
     queue.onceDone =>
-      Config.saveConfig config, (config) ->
-        callback(config, initialUser)
+      Config.saveConfig config, (config) =>
+        @insertUser initialUser, =>
+          callback(config)
 
     queue.doneAddingJobs()
 
@@ -144,9 +145,18 @@ Config =
 
     delete config.password
 
-    Program.prompt 'Set your username: ', (username) ->
+    # FIXME: This prompt sometimes causes the app to not exit correctly after daemonizing.
+    Program.prompt 'Set your username: ', (username) =>
       initialUser.name = username
-      Config.saveConfig config, ->
-        callback(config, initialUser)
+      @insertUser initialUser, =>
+        Config.saveConfig config, =>
+          callback(config)
+
+  insertUser: (user, callback) ->
+    BacklogDB = require('./backlog_db')
+    new BacklogDB (db) ->
+      db.insertUser user.name, user.password, true, ->
+        db.close()
+        callback()
 
 module.exports = Config

@@ -26,9 +26,9 @@ program
       Log.setLevel('silly');
     }
 
-    Config.load(function (config, initial_user) {
+    Config.load(function (config) {
       if (cmd.foreground) {
-        new Engine(config, initial_user);
+        new Engine(config);
         return;
       }
 

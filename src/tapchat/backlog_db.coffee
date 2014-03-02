@@ -44,7 +44,11 @@ class BacklogDB
       m = new DBMigrator
         db:  @db
         dir: migrationsDir
-      m.migrate SCHEMA_VERSION, callback
+      m.migrate SCHEMA_VERSION, =>
+        callback(this)
+
+  close: ->
+    @db.close()
 
   selectUsers: (callback) ->
     @db.all 'SELECT * FROM users', (err, rows) ->
@@ -52,7 +56,7 @@ class BacklogDB
       callback(rows)
 
   selectUser: (id, callback) ->
-    @db.get 'SELECT * FROM users WHERE uid = $uid', 
+    @db.get 'SELECT * FROM users WHERE uid = $uid',
       $uid: id,
       (err, row) ->
         throw err if err
@@ -66,7 +70,7 @@ class BacklogDB
         callback(row)
 
   selectConnections: (uid, callback) ->
-    @db.all 'SELECT * FROM connections WHERE uid = $uid', 
+    @db.all 'SELECT * FROM connections WHERE uid = $uid',
       $uid: uid,
       (err, rows) ->
         throw err if err

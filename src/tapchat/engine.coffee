@@ -45,17 +45,13 @@ SessionStore = require './session_store'
 {starts, ends, compact, count, merge, extend, flatten, del, last} = CoffeeScript.helpers
 
 class Engine
-  constructor: (config, initialUser, callback) ->
+  constructor: (config, callback) ->
     @users = []
 
     @port = config.port
 
     @db = new BacklogDB =>
-      if initialUser
-        @db.insertUser initialUser.name, initialUser.password, true, =>
-          @finishLoading(callback)
-      else
-        @finishLoading(callback)
+      @finishLoading(callback)
 
   finishLoading: (callback) ->
     @startServer(@port, callback)
@@ -69,7 +65,7 @@ class Engine
         unless PasswordHash.verify(password, userInfo.password)
           return done(null, false, message: 'Invalid password')
         done(null, userInfo)
-  
+
     @sessions = new SessionStore(Path.join(Config.getDataDirectory(), 'sessions.json'))
 
     @app = Express()
