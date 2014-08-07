@@ -18,8 +18,7 @@ Installing
     $ sudo npm install -g
     $ tapchat start
     
-    
-Access the web interface by visiting `https://your_ip_address:8067`. Note that only HTTP**S** is supported.
+Access the web interface by visiting `https://your_ip_address:8067`. Note that only secure HTTPS is supported. Select the option to save the automatically-generated certificate into your browser after verifying the fingerprint matches.
 
 If you have any problems, you can start tapchat in debug mode:
 
