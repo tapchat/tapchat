@@ -25,7 +25,6 @@ Http          = require('http')
 Https         = require('https')
 Passport      = require('passport')
 LocalStrategy = require('passport-local').Strategy
-Express       = require('express')
 Url           = require('url')
 WebSocket     = require('faye-websocket')
 PasswordHash  = require('password-hash')
@@ -35,6 +34,14 @@ Crypto        = require('crypto')
 _             = require('underscore')
 Gzippo        = require('gzippo')
 Eco           = require('eco')
+
+# Express and middleware
+Express        = require('express')
+Morgan         = require('morgan')
+CookieParser   = require('cookie-parser')
+BodyParser     = require('body-parser')
+MethodOverride = require('method-override')
+ServeStatic    = require('serve-static')
 
 Log          = require './log'
 Config       = require './config'
@@ -76,13 +83,13 @@ class Engine
         res.clearCookie('session', {secure: true, path: '/chat'}) unless user?
         next()
 
-    @app.use(Express.logger()) if Log.level == 'silly'
-    @app.use(Express.cookieParser())
-    @app.use(Express.bodyParser())
-    @app.use(Express.methodOverride())
+    @app.use(Morgan('combined')) if Log.level == 'silly'
+    @app.use(CookieParser())
+    @app.use(BodyParser())
+    @app.use(MethodOverride())
     @app.use(Passport.initialize())
     @app.use(sessionChecker)
-    @app.use(Express.static(__dirname + '/../../web'))
+    @app.use(ServeStatic(__dirname + '/../../web'))
     @app.use(Gzippo.compress())
 
     @app.set 'views', __dirname + '/../../web'
