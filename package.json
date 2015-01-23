@@ -50,9 +50,7 @@
     "passport-local": "1.0.0",
     "gzippo": "0.2.0",
     "is-running": "1.0.5",
-    "source-map-support": "0.2.7"
-  },
-  "devDependencies": {
+    "source-map-support": "0.2.7",
     "coffee-script": "1.7.1"
   },
   "engines": {
