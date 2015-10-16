@@ -29,7 +29,7 @@
   "dependencies": {
     "faye-websocket": "0.7.2",
     "underscore": "1.6.0",
-    "sqlite3": "2.2.7",
+    "sqlite3": "3.1.0",
     "capisce": "0.6.2",
     "squel": "3.6.1",
     "express": "4.8.1",
